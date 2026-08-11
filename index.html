@@ -32,6 +32,10 @@
     height:env(safe-area-inset-top,0px);
     background:rgba(16,19,24,.96); backdrop-filter:blur(8px);
   }
+  @media (display-mode: standalone){
+    body{padding-top:calc(14px + max(env(safe-area-inset-top,0px), 24px))}
+    #topbar{height:max(env(safe-area-inset-top,0px), 24px)}
+  }
   h1{font-family:var(--disp); font-weight:700; font-size:26px; letter-spacing:.04em; text-transform:uppercase; line-height:1}
   .sub{color:var(--mut); font-size:12.5px; margin-top:3px}
   header{display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px}
