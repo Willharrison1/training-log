@@ -25,7 +25,12 @@
   body{
     font-family:var(--body); background:var(--bg); color:var(--ink);
     max-width:440px; margin:0 auto; min-height:100vh;
-    padding:14px 14px 92px;
+    padding:calc(14px + env(safe-area-inset-top,0px)) 14px 92px;
+  }
+  #topbar{
+    position:fixed; top:0; left:0; right:0; z-index:60;
+    height:env(safe-area-inset-top,0px);
+    background:rgba(16,19,24,.96); backdrop-filter:blur(8px);
   }
   h1{font-family:var(--disp); font-weight:700; font-size:26px; letter-spacing:.04em; text-transform:uppercase; line-height:1}
   .sub{color:var(--mut); font-size:12.5px; margin-top:3px}
@@ -200,6 +205,8 @@
 </style>
 </head>
 <body>
+
+<div id="topbar"></div>
 
 <header>
   <div>
