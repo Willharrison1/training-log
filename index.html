@@ -56,8 +56,8 @@
   .bw-chip:active{transform:scale(.96)}
   .bw-chip .v{font-family:var(--mono); font-size:16px; font-weight:600}
   .bw-chip .l{font-size:10px; color:var(--mut); text-transform:uppercase; letter-spacing:.08em}
-  .chipcol{display:flex; flex-direction:column; gap:6px}
-  .chipcol .bw-chip{padding:5px 12px}
+  .chipcol{display:flex; gap:6px}
+  .chipcol .bw-chip{padding:6px 10px; min-width:64px; text-align:center}
 
   /* exercise quick history */
   .exname{cursor:pointer; border-bottom:1px dotted var(--faint)}
@@ -309,11 +309,11 @@
   <div class="chipcol">
     <div class="bw-chip" id="bwchip" onclick="toggleBw()">
       <div class="v" id="bwval">--</div>
-      <div class="l">lbs &middot; tap to log</div>
+      <div class="l">lbs</div>
     </div>
     <div class="bw-chip" id="protchip" onclick="toggleProt()">
       <div class="v" id="protval">--</div>
-      <div class="l">protein &middot; tap to add</div>
+      <div class="l">protein</div>
     </div>
   </div>
 </header>
@@ -533,10 +533,10 @@ function renderWeek(){
       <span class="t">${'MTWTFSS'[i]}</span><span class="n">${+date.slice(8)}</span>${dot}</div>`;
   }).join('');
 }
-function pickDate(d){ selDate = d; swapIdx = null; qhKey = null; renderWeek(); renderWorkout(); renderStats(); }
+function pickDate(d){ selDate = d; swapIdx = null; qhKey = null; renderWeek(); renderWorkout(); renderStats(); renderBw(); renderProt(); }
 function wkShift(n){ weekMon = addDays(weekMon, 7*n); renderWeek(); }
-function wkToday(){ selDate = todayISO(); weekMon = mondayOf(selDate); swapIdx = null;
-  renderWeek(); renderWorkout(); renderStats(); }
+function wkToday(){ selDate = todayISO(); weekMon = mondayOf(selDate); swapIdx = null; qhKey = null;
+  renderWeek(); renderWorkout(); renderStats(); renderBw(); renderProt(); }
 
 /* ---------- day builder ---------- */
 function newItem(k, note){
@@ -1007,11 +1007,10 @@ function sessionCalories(s){
 /* ---------- protein ---------- */
 function toggleProt(){ document.getElementById('protbox').classList.toggle('open'); }
 function addProt(g){
-  const t = todayISO();
-  state.protein[t] = Math.max(0, (state.protein[t]||0) + g);
+  state.protein[selDate] = Math.max(0, (state.protein[selDate]||0) + g);
   persist(); renderProt();
 }
-function resetProt(){ const t = todayISO(); state.protein[t] = 0; persist(); renderProt(); }
+function resetProt(){ state.protein[selDate] = 0; persist(); renderProt(); }
 function logProt(){
   const v = parseFloat(document.getElementById('protinput').value);
   if(!v) return;
@@ -1019,14 +1018,14 @@ function logProt(){
   document.getElementById('protinput').value = '';
 }
 function renderProt(){
-  const g = state.protein[todayISO()] || 0;
+  const g = state.protein[selDate] || 0;
   const el = document.getElementById('protval');
   el.textContent = g ? g + 'g' : '--';
   el.style.color = g >= 150 ? 'var(--run)' : '';
   const days = Object.keys(state.protein).filter(d=>state.protein[d] > 0).sort().slice(-7);
   const avg = days.length ? Math.round(days.reduce((t,d)=>t+state.protein[d], 0) / days.length) : 0;
   document.getElementById('prottrend').textContent =
-    `${g}g today · target 150–160g` + (avg ? ` · ${avg}g avg over last ${days.length} logged day${days.length>1?'s':''}` : '');
+    `${g}g on ${fmtDate(selDate)} · target 150–160g` + (avg ? ` · ${avg}g avg over last ${days.length} logged day${days.length>1?'s':''}` : '');
 }
 
 /* ---------- bodyweight ---------- */
@@ -1034,22 +1033,26 @@ function toggleBw(){ document.getElementById('bwbox').classList.toggle('open'); 
 function logBw(){
   const v = parseFloat(document.getElementById('bwinput').value);
   if(!v || v<80 || v>400) return;
-  state.weights.push({date: todayISO(), lbs: v});
+  const existing = state.weights.find(x=>x.date === selDate);
+  if(existing) existing.lbs = v;
+  else state.weights.push({date: selDate, lbs: v});
+  state.weights.sort((a,b)=> a.date<b.date ? -1 : a.date>b.date ? 1 : 0);
   persist(); renderBw();
   document.getElementById('bwinput').value='';
   document.getElementById('bwbox').classList.remove('open');
 }
 function renderBw(){
-  const w = state.weights.filter(x=>x.lbs);
   const el = document.getElementById('bwval');
   const tr = document.getElementById('bwtrend');
-  if(!w.length){ el.textContent='--'; tr.textContent='Log your weight every few mornings. The trend matters, not the number.'; return; }
+  const entry = state.weights.find(x=>x.lbs && x.date === selDate);
+  el.textContent = entry ? entry.lbs.toFixed(1) : '--';
+  const w = state.weights.filter(x=>x.lbs);
+  if(!w.length){ tr.textContent='Log your weight every few mornings. The trend matters, not the number.'; return; }
   const lastW = w[w.length-1];
-  el.textContent = lastW.lbs.toFixed(1);
-  if(w.length>=2){
-    const diff = lastW.lbs - w[0].lbs;
-    tr.textContent = `${w.length} entries · ${diff>=0?'+':''}${diff.toFixed(1)} lbs since ${fmtDate(w[0].date)}. Remember: recomp barely moves the scale.`;
-  } else tr.textContent = `Logged ${fmtDate(lastW.date)}.`;
+  tr.textContent = (entry ? `Logged for ${fmtDate(selDate)}. ` : `Logs to ${fmtDate(selDate)}. `) +
+    (w.length>=2 ?
+      `${w.length} entries · ${(lastW.lbs-w[0].lbs)>=0?'+':''}${(lastW.lbs-w[0].lbs).toFixed(1)} lbs since ${fmtDate(w[0].date)}.` :
+      `Last: ${lastW.lbs.toFixed(1)} on ${fmtDate(lastW.date)}.`);
 }
 
 /* ---------- history ---------- */
