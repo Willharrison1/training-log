@@ -56,9 +56,6 @@
   .bw-chip:active{transform:scale(.96)}
   .bw-chip .v{font-family:var(--mono); font-size:16px; font-weight:600}
   .bw-chip .l{font-size:10px; color:var(--mut); text-transform:uppercase; letter-spacing:.08em}
-  .chipcol{display:flex; gap:6px}
-  .chipcol .bw-chip{padding:6px 10px; min-width:64px; text-align:center}
-
   /* exercise quick history */
   .exname{cursor:pointer; border-bottom:1px dotted var(--faint)}
   .qhist{margin-top:9px; border-top:1px solid var(--line); padding-top:7px}
@@ -306,15 +303,9 @@
     <h1>Training Log</h1>
     <div class="sub" id="todaydate"></div>
   </div>
-  <div class="chipcol">
-    <div class="bw-chip" id="bwchip" onclick="toggleBw()">
-      <div class="v" id="bwval">--</div>
-      <div class="l">lbs</div>
-    </div>
-    <div class="bw-chip" id="protchip" onclick="toggleProt()">
-      <div class="v" id="protval">--</div>
-      <div class="l">protein</div>
-    </div>
+  <div class="bw-chip" id="bwchip" onclick="toggleBw()">
+    <div class="v" id="bwval">--</div>
+    <div class="l">lbs &middot; tap to log</div>
   </div>
 </header>
 
@@ -325,22 +316,6 @@
       <button onclick="logBw()">Log weight</button>
     </div>
     <div class="note" id="bwtrend"></div>
-  </div>
-</div>
-
-<div class="bwbox" id="protbox">
-  <div class="card" style="margin-bottom:0">
-    <div class="exbtns" style="margin-top:0">
-      <button class="mini" onclick="addProt(10)">+10g</button>
-      <button class="mini" onclick="addProt(25)">+25g</button>
-      <button class="mini" onclick="addProt(40)">+40g</button>
-      <button class="mini" onclick="resetProt()">reset day</button>
-    </div>
-    <div class="bwrow" style="margin-top:8px">
-      <input type="number" inputmode="numeric" id="protinput" placeholder="35">
-      <button onclick="logProt()">Add g</button>
-    </div>
-    <div class="note" id="prottrend"></div>
   </div>
 </div>
 
@@ -421,7 +396,7 @@ const PRESETS = [
   {id:7, label:'Walk day', type:'walk', items:['__walk'], notes:{}}
 ];
 
-let state = { sessions:[], weights:[], drafts:{}, customEx:{}, protein:{}, lastPreset:0 };
+let state = { sessions:[], weights:[], drafts:{}, customEx:{}, lastPreset:0 };
 let selDate = null, weekMon = null, swapIdx = null, qhKey = null;
 let saveTimer = null;
 
@@ -432,7 +407,7 @@ async function loadState(){
     if(r) state = Object.assign(state, JSON.parse(r));
   }catch(e){ /* first run, defaults stand */ }
   if(!state.customEx) state.customEx = {};
-  if(!state.protein) state.protein = {};
+  delete state.protein;
   migrate();
 }
 function migrate(){
@@ -533,10 +508,10 @@ function renderWeek(){
       <span class="t">${'MTWTFSS'[i]}</span><span class="n">${+date.slice(8)}</span>${dot}</div>`;
   }).join('');
 }
-function pickDate(d){ selDate = d; swapIdx = null; qhKey = null; renderWeek(); renderWorkout(); renderStats(); renderBw(); renderProt(); }
+function pickDate(d){ selDate = d; swapIdx = null; qhKey = null; renderWeek(); renderWorkout(); renderStats(); renderBw(); }
 function wkShift(n){ weekMon = addDays(weekMon, 7*n); renderWeek(); }
 function wkToday(){ selDate = todayISO(); weekMon = mondayOf(selDate); swapIdx = null; qhKey = null;
-  renderWeek(); renderWorkout(); renderStats(); renderBw(); renderProt(); }
+  renderWeek(); renderWorkout(); renderStats(); renderBw(); }
 
 /* ---------- day builder ---------- */
 function newItem(k, note){
@@ -1004,30 +979,6 @@ function sessionCalories(s){
   return cal ? Math.round(cal) : null;
 }
 
-/* ---------- protein ---------- */
-function toggleProt(){ document.getElementById('protbox').classList.toggle('open'); }
-function addProt(g){
-  state.protein[selDate] = Math.max(0, (state.protein[selDate]||0) + g);
-  persist(); renderProt();
-}
-function resetProt(){ state.protein[selDate] = 0; persist(); renderProt(); }
-function logProt(){
-  const v = parseFloat(document.getElementById('protinput').value);
-  if(!v) return;
-  addProt(v);
-  document.getElementById('protinput').value = '';
-}
-function renderProt(){
-  const g = state.protein[selDate] || 0;
-  const el = document.getElementById('protval');
-  el.textContent = g ? g + 'g' : '--';
-  el.style.color = g >= 150 ? 'var(--run)' : '';
-  const days = Object.keys(state.protein).filter(d=>state.protein[d] > 0).sort().slice(-7);
-  const avg = days.length ? Math.round(days.reduce((t,d)=>t+state.protein[d], 0) / days.length) : 0;
-  document.getElementById('prottrend').textContent =
-    `${g}g on ${fmtDate(selDate)} · target 150–160g` + (avg ? ` · ${avg}g avg over last ${days.length} logged day${days.length>1?'s':''}` : '');
-}
-
 /* ---------- bodyweight ---------- */
 function toggleBw(){ document.getElementById('bwbox').classList.toggle('open'); }
 function logBw(){
@@ -1155,7 +1106,6 @@ function renderProgressOptions(){
   state.sessions.forEach(s=>Object.keys(s.entries).forEach(k=>keys.add(k)));
   const opts = [
     '<option value="__bw">Body weight</option>',
-    '<option value="__prot">Protein</option>',
     '<option value="__cal">Calories / week</option>',
     '<option value="__vol">Session volume</option>',
     '<option value="__run">Run pace</option>'
@@ -1293,20 +1243,6 @@ function renderProgress(){
       const avg = withData.reduce((t,r)=>t+r.v,0)/withData.length;
       meta = `avg ${fmtVol(Math.round(avg))} lb across ${withData.length} active week${withData.length>1?'s':''}`;
     } else rows = [];
-  } else if(key === '__prot'){
-    bars = true;
-    if(Object.keys(state.protein).some(d=>state.protein[d] > 0)){
-      rows = Array.from({length:14}, (_,i)=>{
-        const d = addDays(todayISO(), -(13-i));
-        const g = state.protein[d] || 0;
-        return {d, v:g, txt:g+'g'};
-      });
-      cfg = {color:'var(--run)', yfmt:v=>Math.round(v)};
-      big = state.protein[todayISO()] || 0; unit = 'g today';
-      const logged = rows.filter(r=>r.v>0);
-      const avg = logged.length ? Math.round(logged.reduce((t,r)=>t+r.v,0)/logged.length) : 0;
-      meta = 'target 150–160g' + (avg ? ` · avg ${avg}g on logged days` : '');
-    }
   } else if(key === '__cal'){
     bars = true;
     const thisMon = mondayOf(todayISO());
@@ -1397,11 +1333,11 @@ function importData(input){
     try{
       const parsed = JSON.parse(rd.result);
       if(!parsed.sessions) throw new Error('bad file');
-      state = Object.assign({sessions:[],weights:[],drafts:{},customEx:{},protein:{},lastPreset:0}, parsed);
+      state = Object.assign({sessions:[],weights:[],drafts:{},customEx:{},lastPreset:0}, parsed);
       if(!state.customEx) state.customEx = {};
-      if(!state.protein) state.protein = {};
+      delete state.protein;
       migrate();
-      persist(); renderBw(); renderProt(); renderHistory(); renderWeek(); renderWorkout();
+      persist(); renderBw(); renderHistory(); renderWeek(); renderWorkout();
       renderProgressOptions(); renderProgress(); renderStats(); renderBigStats(); renderRecords();
     }catch(e){ alert('That file does not look like a Training Log backup.'); }
   };
@@ -1419,7 +1355,7 @@ function importData(input){
   await loadState();
   selDate = todayISO();
   weekMon = mondayOf(selDate);
-  renderWeek(); renderWorkout(); renderBw(); renderProt(); renderStats();
+  renderWeek(); renderWorkout(); renderBw(); renderStats();
 })();
 </script>
 </body>
