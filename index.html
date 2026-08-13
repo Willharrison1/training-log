@@ -275,6 +275,26 @@
   .mile{font-size:11px; font-family:var(--mono); color:var(--mut);
     border:1px solid var(--line); border-radius:16px; padding:3.5px 10px}
   .mile.new{color:var(--legs); border-color:rgba(229,185,63,.5)}
+
+  /* wrapped overlay */
+  #wrapped{
+    position:fixed; inset:0; z-index:100; display:none; overflow-y:auto;
+    background:radial-gradient(130% 55% at 50% 0%, #1D2634 0%, #0E1116 55%, #0A0D11 100%);
+    padding:calc(34px + env(safe-area-inset-top,0px)) 22px 70px;
+  }
+  #wrapped.on{display:block}
+  .wclose{
+    position:fixed; top:calc(12px + env(safe-area-inset-top,0px)); right:14px; z-index:101;
+    width:38px; height:38px; border-radius:50%; border:1px solid var(--line);
+    background:rgba(26,33,43,.92); color:var(--mut); font-size:20px; line-height:1; cursor:pointer;
+  }
+  .wslide{margin:0 auto 36px; max-width:400px; text-align:center; animation:wup .5s ease both}
+  .wkicker{font-family:var(--disp); font-size:13px; letter-spacing:.3em; color:var(--mut); text-transform:uppercase}
+  .wtitle{font-family:var(--disp); font-size:42px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; line-height:1.05; margin-top:8px}
+  .wbig{font-family:var(--mono); font-size:52px; font-weight:700; line-height:1.05}
+  .wlab{font-family:var(--disp); font-size:15px; letter-spacing:.14em; text-transform:uppercase; color:var(--mut); margin-top:7px}
+  .wfun{font-size:13.5px; color:var(--ink); margin-top:9px; line-height:1.55; opacity:.9}
+  @keyframes wup{from{opacity:0; transform:translateY(16px)} to{opacity:1; transform:none}}
   .empty{color:var(--faint); font-size:13.5px; text-align:center; padding:28px 10px; line-height:1.6}
 
   /* bodyweight modal-ish */
@@ -391,6 +411,20 @@
     <div class="milewrap" id="miles"></div>
     <div class="note" id="milenext"></div>
   </div>
+  <div class="card">
+    <h3><span class="bar push"></span>Wrapped</h3>
+    <div class="note">Your training, but make it fun.</div>
+    <div class="exbtns">
+      <button class="mini" onclick="openWrapped('month')">This month</button>
+      <button class="mini" onclick="openWrapped('lastmonth')">Last month</button>
+      <button class="mini" onclick="openWrapped('year')">This year</button>
+    </div>
+  </div>
+</div>
+
+<div id="wrapped">
+  <button class="wclose" onclick="closeWrapped()">×</button>
+  <div id="wslides"></div>
 </div>
 
 <nav>
@@ -1349,6 +1383,123 @@ function renderMilestones(){
   });
   document.getElementById('milenext').textContent = next ? 'Next up: ' + next.txt : '';
 }
+/* ---------- wrapped ---------- */
+function periodStats(from, to){
+  const ss = state.sessions.filter(s=>s.date>=from && s.date<=to);
+  const st = {n:ss.length, vol:0, reps:0, sets:0, mi:0, yd:0, min:0, cal:0, byEx:{}};
+  ss.forEach(s=>{
+    st.vol += sessionVolume(s);
+    st.cal += sessionCalories(s)||0;
+    if(s.dur) st.min += Math.min(s.dur, 120);
+    for(const k in s.entries){
+      st.byEx[k] = (st.byEx[k]||0) + 1;
+      s.entries[k].forEach(x=>{ if(x.w||x.r){ st.sets++; st.reps += +x.r||0; } });
+    }
+    ['run','walk','bike'].forEach(f=>{ if(s[f] && s[f].mi) st.mi += +s[f].mi; });
+    if(s.swim && s.swim.yd) st.yd += +s.swim.yd;
+  });
+  let pr = null;
+  const keys = new Set(); ss.forEach(s=>Object.keys(s.entries).forEach(k=>keys.add(k)));
+  keys.forEach(k=>{
+    let inBest = 0; ss.forEach(s=>{ if(s.entries[k]) inBest = Math.max(inBest, bestE1rm(s.entries[k])); });
+    let preBest = 0; state.sessions.forEach(s=>{ if(s.date < from && s.entries[k]) preBest = Math.max(preBest, bestE1rm(s.entries[k])); });
+    if(inBest && preBest && inBest > preBest){
+      const gain = inBest - preBest;
+      if(!pr || gain > pr.gain) pr = {k, gain, e:inBest};
+    }
+  });
+  st.pr = pr;
+  const ws = state.weights.filter(w=>w.lbs && w.date>=from && w.date<=to);
+  st.bwFrom = ws.length>1 ? ws[0].lbs : null;
+  st.bwTo = ws.length>1 ? ws[ws.length-1].lbs : null;
+  return st;
+}
+function pickEquiv(val, table){
+  for(const [unit, one, many] of table){
+    const n = val/unit;
+    if(n >= 0.95) return `${n<10 ? Math.round(n*10)/10 : Math.round(n)} ${Math.round(n*10)/10 > 1 ? many : one}`;
+  }
+  return null;
+}
+const LIFT_EQ = [
+  [300000,'blue whale','blue whales'],
+  [90000,'Boeing 737','Boeing 737s'],
+  [25000,'school bus','school buses'],
+  [13000,'elephant','elephants'],
+  [4700,'pickup truck','pickup trucks'],
+  [1000,'grand piano','grand pianos'],
+  [430,'silverback gorilla','silverback gorillas'],
+];
+const CAL_EQ = [
+  [2270,'large pepperoni pizza','large pepperoni pizzas'],
+  [1000,'chipotle burrito','chipotle burritos'],
+  [563,'Big Mac','Big Macs'],
+  [250,'donut','donuts'],
+];
+function distFun(mi){
+  if(mi >= 2400) return 'that’s Florida to California \u{1F3DC}';
+  if(mi >= 760) return 'San Francisco to LA — and back \u{1F309}';
+  if(mi >= 380) return 'that’s San Francisco to LA \u{1F309}';
+  if(mi >= 215) return 'that’s New York to Boston \u{1F5FD}';
+  if(mi >= 26.2) return `${Math.round(mi/26.2*10)/10} marathons \u{1F3C3}`;
+  if(mi >= 13) return `${Math.round(mi/13*10)/10}× the length of Manhattan \u{1F5FD}`;
+  if(mi >= 1.7) return `${Math.round(mi/1.7)}× across the Golden Gate Bridge \u{1F309}`;
+  if(mi > 0) return `${Math.round(mi*4)} laps of a track \u{1F3DF}`;
+  return null;
+}
+function openWrapped(mode){
+  const t = todayISO();
+  const monthName = d => new Date(d+'T12:00:00').toLocaleDateString('en-US',{month:'long'});
+  let from, to, title;
+  if(mode === 'month'){ from = t.slice(0,8)+'01'; to = t; title = monthName(t); }
+  else if(mode === 'lastmonth'){
+    const lastPrev = addDays(t.slice(0,8)+'01', -1);
+    from = lastPrev.slice(0,8)+'01'; to = lastPrev; title = monthName(lastPrev);
+  }
+  else { from = t.slice(0,4)+'-01-01'; to = t; title = t.slice(0,4); }
+  const st = periodStats(from, to);
+  let html = `<div class="wslide"><div class="wkicker">Training Log</div><div class="wtitle">${title} Wrapped</div></div>`;
+  if(!st.n){
+    html += `<div class="wslide" style="animation-delay:.1s"><div class="wfun">Nothing logged in this period yet.<br>Go lift something heavy, then come back.</div></div>`;
+  } else {
+    const S = [];
+    const slide = (big, lab, fun, color) => S.push({big, lab, fun, color});
+    slide(st.n, st.n===1?'workout':'workouts',
+      st.min ? `${Math.round(st.min/6)/10} hours of work · ≈ ${Math.max(1,Math.round(st.min/120))} movies’ worth of gym time \u{1F3AC}` : '', 'var(--ink)');
+    if(st.vol){
+      const eq = pickEquiv(st.vol, LIFT_EQ);
+      slide(fmtVol(st.vol), 'lb lifted', eq ? `you lifted ${eq} \u{1F418}` : '', 'var(--push)');
+    }
+    if(st.reps) slide(st.reps.toLocaleString('en-US'), 'reps ground out', `across ${st.sets.toLocaleString('en-US')} hard sets \u{1F4AA}`, 'var(--pull)');
+    if(st.mi) slide(st.mi.toFixed(1), 'miles covered', distFun(st.mi)||'', 'var(--run)');
+    if(st.yd) slide((+st.yd).toLocaleString('en-US'), 'yards swum', `≈ ${Math.max(1,Math.round(st.yd/54.7))} laps of an Olympic pool \u{1F3CA}`, 'var(--pull)');
+    if(st.cal){
+      const eq = pickEquiv(st.cal, CAL_EQ);
+      slide('~'+Math.round(st.cal).toLocaleString('en-US'), 'calories burned', eq ? `≈ ${eq} \u{1F369}` : '', 'var(--legs)');
+    }
+    const top = Object.keys(st.byEx).sort((a,b)=>st.byEx[b]-st.byEx[a])[0];
+    if(top) slide(st.byEx[top], `sessions of ${exName(top)}`, 'your ride-or-die this period \u{1F91D}', 'var(--core)');
+    if(st.pr) slide('+'+Math.round(st.pr.gain), `lb on your ${exName(st.pr.k)} e1RM`,
+      `now sitting at ${Math.round(st.pr.e)} — biggest jump of the period \u{1F4C8}`, 'var(--legs)');
+    if(st.bwFrom !== null && st.bwTo !== null && st.bwFrom !== st.bwTo)
+      slide(`${st.bwFrom.toFixed(1)} → ${st.bwTo.toFixed(1)}`, 'lb bodyweight',
+        'remember: recomp barely moves the scale ⚖️', 'var(--mut)');
+    html += S.map((s,i)=>{
+      const sz = String(s.big).length > 7 ? 'font-size:33px;' : '';
+      return `<div class="wslide" style="animation-delay:${((i+1)*0.09).toFixed(2)}s">
+        <div class="wbig" style="color:${s.color};${sz}">${s.big}</div>
+        <div class="wlab">${s.lab}</div>
+        ${s.fun ? `<div class="wfun">${s.fun}</div>` : ''}
+      </div>`;
+    }).join('');
+    html += `<div class="wslide" style="animation-delay:${((S.length+1)*0.09).toFixed(2)}s"><div class="wkicker">keep forging \u{1F525}</div></div>`;
+  }
+  document.getElementById('wslides').innerHTML = html;
+  const el = document.getElementById('wrapped');
+  el.classList.add('on');
+  el.scrollTop = 0;
+}
+function closeWrapped(){ document.getElementById('wrapped').classList.remove('on'); }
 function renderRecords(){
   const card = document.getElementById('recordscard');
   const el = document.getElementById('records');

@@ -1,4 +1,4 @@
-const CACHE = 'trainlog-v6';
+const CACHE = 'trainlog-v7';
 const ASSETS = ['./', './index.html', './manifest.json', './icon-180.png', './icon-512.png'];
 
 self.addEventListener('install', e => {
