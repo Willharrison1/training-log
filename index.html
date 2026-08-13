@@ -16,7 +16,7 @@
     --bg:#0E1116; --card:#1A212B; --cardhi:#1F2732; --card2:#141A22; --line:#2A323E;
     --edge:rgba(255,255,255,.055);
     --ink:#EEF1F5; --mut:#8C96A5; --faint:#5A6472;
-    --push:#E2544A; --pull:#4A79E8; --legs:#E5B93F; --run:#4CB871;
+    --push:#E2544A; --pull:#4A79E8; --legs:#E5B93F; --run:#4CB871; --core:#A06CE8;
     --disp:'Barlow Condensed','Arial Narrow',sans-serif;
     --body:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
     --mono:ui-monospace,'SF Mono',Menlo,Consolas,monospace;
@@ -91,12 +91,13 @@
   .plate.future{opacity:.45}
   .plate.logged.push{border-color:var(--push)} .plate.logged.pull{border-color:var(--pull)}
   .plate.logged.walk{border-color:var(--run)} .plate.logged.legs{border-color:var(--legs)}
-  .plate.logged.custom{border-color:var(--legs)}
+  .plate.logged.custom{border-color:var(--legs)} .plate.logged.core{border-color:var(--core)}
   .plate.sel{background:var(--card2); border-color:var(--ink)}
   .plate.sel.logged.push{background:var(--push); border-color:var(--push); box-shadow:0 6px 16px -7px rgba(226,84,74,.6)}
   .plate.sel.logged.pull{background:var(--pull); border-color:var(--pull); box-shadow:0 6px 16px -7px rgba(74,121,232,.6)}
   .plate.sel.logged.walk{background:var(--run); border-color:var(--run); box-shadow:0 6px 16px -7px rgba(76,184,113,.6)}
   .plate.sel.logged.legs,.plate.sel.logged.custom{background:var(--legs); border-color:var(--legs); box-shadow:0 6px 16px -7px rgba(229,185,63,.6)}
+  .plate.sel.logged.core{background:var(--core); border-color:var(--core); box-shadow:0 6px 16px -7px rgba(160,108,232,.6)}
   .plate.sel.logged .n,.plate.sel.logged .t{color:#fff}
   .plate.today{box-shadow:0 0 0 2px var(--bg), 0 0 0 4px var(--mut), 0 4px 10px -6px rgba(0,0,0,.55)}
   .plate .dot{position:absolute; bottom:-3px; right:-1px; width:11px; height:11px; border-radius:50%;
@@ -141,6 +142,7 @@
   .bar.pull{background:var(--pull); box-shadow:0 0 8px rgba(74,121,232,.5)}
   .bar.legs{background:var(--legs); box-shadow:0 0 8px rgba(229,185,63,.5)}
   .bar.run{background:var(--run); box-shadow:0 0 8px rgba(76,184,113,.5)}
+  .bar.core{background:var(--core); box-shadow:0 0 8px rgba(160,108,232,.5)}
   .target{margin-left:auto; font-family:var(--mono); font-size:12px; color:var(--mut)}
   .ictl{
     background:none; border:none; color:var(--faint); font-size:16px; cursor:pointer;
@@ -199,6 +201,7 @@
   .finish.pull{background:linear-gradient(180deg,#5583EE,#3D69D6); box-shadow:inset 0 1px 0 rgba(255,255,255,.18), 0 10px 26px -10px rgba(74,121,232,.55)}
   .finish.walk{background:linear-gradient(180deg,#55C27C,#3EA662); box-shadow:inset 0 1px 0 rgba(255,255,255,.18), 0 10px 26px -10px rgba(76,184,113,.55)}
   .finish.legs,.finish.custom{background:linear-gradient(180deg,#EAC14C,#D3A72F); box-shadow:inset 0 1px 0 rgba(255,255,255,.18), 0 10px 26px -10px rgba(229,185,63,.5)}
+  .finish.core{background:linear-gradient(180deg,#AC7CEE,#8D58D8); box-shadow:inset 0 1px 0 rgba(255,255,255,.18), 0 10px 26px -10px rgba(160,108,232,.55)}
   .finish:active{transform:translateY(1px) scale(.99); filter:brightness(.92)}
   .saved-flash{ text-align:center; color:var(--run); font-size:13px; margin-top:10px; font-weight:600 }
   .saved-flash:not(:empty){animation:flashin .25s ease}
@@ -364,36 +367,49 @@ const KEY = 'trainlog-v1';
 
 /* ---------- exercise library ---------- */
 const EXLIB = {
-  bench:{name:'Bench press (flat or incline)', tag:'push', sets:4, reps:'6–10',  repMax:10},
+  bench:{name:'Bench press (free bar)',        tag:'push', sets:4, reps:'6–10',  repMax:10},
+  smith:{name:'Bench press (smith)',           tag:'push', sets:4, reps:'6–10',  repMax:10},
   ohp:  {name:'Shoulder press (DB)',           tag:'push', sets:3, reps:'8–12',  repMax:12},
   fly:  {name:'Chest fly',                     tag:'push', sets:3, reps:'10–15', repMax:15},
   tri:  {name:'Triceps pushdown / overhead',   tag:'push', sets:3, reps:'10–15', repMax:15},
+  dip:  {name:'Dips',                          tag:'push', sets:3, reps:'6–10',  repMax:10},
+  latr: {name:'Lateral raises (DB)',           tag:'push', sets:3, reps:'12–15', repMax:15},
   row:  {name:'Rows (barbell or cable)',       tag:'pull', sets:4, reps:'6–10',  repMax:10},
   lat:  {name:'Lat pulldown',                  tag:'pull', sets:3, reps:'8–12',  repMax:12},
   curl: {name:'Bicep curls',                   tag:'pull', sets:3, reps:'10–15', repMax:15},
   rdf:  {name:'Rear delt fly / face pulls',    tag:'pull', sets:2, reps:'12–15', repMax:15},
+  pullup:{name:'Pull-ups / chin-ups',          tag:'pull', sets:3, reps:'6–10',  repMax:10},
+  shrug:{name:'Shrugs (DB or BB)',             tag:'pull', sets:3, reps:'10–15', repMax:15},
   split:{name:'Split squats (per leg)',        tag:'legs', sets:2, reps:'10–12', repMax:12},
   ham:  {name:'Hamstring curls',               tag:'legs', sets:2, reps:'10–15', repMax:15},
   ext:  {name:'Leg extensions',                tag:'legs', sets:2, reps:'10–15', repMax:15},
+  rdl:  {name:'Romanian deadlift',             tag:'legs', sets:3, reps:'8–12',  repMax:12},
+  calf: {name:'Calf raises',                   tag:'legs', sets:3, reps:'12–15', repMax:15},
+  plank:{name:'Plank (log seconds as reps)',   tag:'core', sets:3, reps:'30–60s', repMax:999},
+  legraise:{name:'Hanging leg raises',         tag:'core', sets:3, reps:'10–15', repMax:15},
+  crunch:{name:'Cable crunch / crunches',      tag:'core', sets:3, reps:'12–20', repMax:20},
+  twist:{name:'Russian twists (per side)',     tag:'core', sets:3, reps:'12–20', repMax:20},
 };
-const EXNAMES = {bench:'Bench press', ohp:'Shoulder press', fly:'Chest fly', tri:'Triceps',
-  row:'Rows', lat:'Lat pulldown', curl:'Bicep curls', rdf:'Rear delt fly',
-  split:'Split squats', ham:'Hamstring curls', ext:'Leg extensions'};
+const EXNAMES = {bench:'Bench (free)', smith:'Bench (smith)', ohp:'Shoulder press', fly:'Chest fly', tri:'Triceps',
+  dip:'Dips', latr:'Lateral raises', row:'Rows', lat:'Lat pulldown', curl:'Bicep curls', rdf:'Rear delt fly',
+  pullup:'Pull-ups', shrug:'Shrugs', split:'Split squats', ham:'Hamstring curls', ext:'Leg extensions',
+  rdl:'Romanian DL', calf:'Calf raises', plank:'Plank', legraise:'Leg raises', crunch:'Crunches', twist:'Russian twists'};
 
 /* ---------- presets (the old Day 1-7 program) ---------- */
 const PRESETS = [
-  {id:1, label:'Push + Legs', type:'push', items:['bench','ohp','fly','tri','__run','split'],
+  {id:1, label:'Push + Legs', type:'push', items:['bench','ohp','fly','tri','__run','split','plank'],
     notes:{split:'After the run. Lighter DBs than fresh, 1–2 reps in reserve, hold a rail if shaky.'}},
-  {id:2, label:'Pull + Legs', type:'pull', items:['row','lat','curl','rdf','__run','ham'],
+  {id:2, label:'Pull + Legs', type:'pull', items:['row','lat','curl','rdf','__run','ham','legraise'],
     notes:{ham:'Machine — safe to push to failure after the run.'}},
-  {id:3, label:'Push', type:'push', items:['bench','ohp','fly','tri','__run'],
+  {id:3, label:'Push', type:'push', items:['bench','ohp','fly','tri','__run','twist'],
     notes:{bench:'Swap incline/flat from your last push day.'}},
-  {id:4, label:'Pull + Legs', type:'pull', items:['row','lat','curl','rdf','__run','ext'],
+  {id:4, label:'Pull + Legs', type:'pull', items:['row','lat','curl','rdf','__run','ext','crunch'],
     notes:{ext:'Machine — safe to push to failure after the run.'}},
-  {id:5, label:'Push + Legs', type:'push', items:['bench','ohp','fly','tri','__run','split'],
+  {id:5, label:'Push + Legs', type:'push', items:['bench','ohp','fly','tri','__run','split','legraise'],
     notes:{split:'After the run. Lighter DBs than fresh, 1–2 reps in reserve.'}},
-  {id:6, label:'Pull', type:'pull', items:['row','lat','curl','rdf','__run'], notes:{}},
-  {id:7, label:'Walk day', type:'walk', items:['__walk'], notes:{}}
+  {id:6, label:'Pull', type:'pull', items:['row','lat','curl','rdf','__run','twist'], notes:{}},
+  {id:7, label:'Walk day', type:'walk', items:['__walk','plank'],
+    notes:{plank:'Rest-day core — easy effort, keep the habit alive.'}}
 ];
 
 let state = { sessions:[], weights:[], drafts:{}, customEx:{}, lastPreset:0 };
@@ -517,6 +533,8 @@ function wkToday(){ selDate = todayISO(); weekMon = mondayOf(selDate); swapIdx =
 function newItem(k, note){
   if(k === '__run')  return {k:'__run',  min:'', sec:'', mi:''};
   if(k === '__walk') return {k:'__walk', min:'', mi:''};
+  if(k === '__swim') return {k:'__swim', min:'', yd:''};
+  if(k === '__bike') return {k:'__bike', min:'', mi:''};
   const inf = exInfo(k) || {sets:3};
   const it = {k, sets:Array.from({length:inf.sets||3}, ()=>({w:'',r:'',done:false}))};
   if(note) it.note = note;
@@ -524,13 +542,13 @@ function newItem(k, note){
 }
 function exOptions(){
   let h = '';
-  ['push','pull','legs'].forEach(t=>{
+  ['push','pull','legs','core'].forEach(t=>{
     const ks = Object.keys(EXLIB).filter(k=>EXLIB[k].tag===t)
       .concat(Object.keys(state.customEx).filter(k=>state.customEx[k].tag===t));
     if(ks.length) h += `<optgroup label="${t.toUpperCase()}">` +
       ks.map(k=>`<option value="${k}">${exName(k)}</option>`).join('') + '</optgroup>';
   });
-  h += '<optgroup label="CARDIO"><option value="__run">Run</option><option value="__walk">Walk</option></optgroup>';
+  h += '<optgroup label="CARDIO"><option value="__run">Run</option><option value="__walk">Walk</option><option value="__swim">Swim</option><option value="__bike">Bike</option></optgroup>';
   return h;
 }
 function presetSel(sel){ const v = +sel.value; sel.value=''; if(v) loadPreset(v); }
@@ -595,6 +613,8 @@ function qhistHTML(k){
 function itemCard(it, i){
   if(it.k === '__run')  return runCard(it, i);
   if(it.k === '__walk') return walkCard(it, i);
+  if(it.k === '__swim') return swimCard(it, i);
+  if(it.k === '__bike') return bikeCard(it, i);
   const inf = exInfo(it.k) || {tag:'push', reps:'', repMax:99};
   const last = lastSetsFor(it.k);
   const lastTxt = last ? 'Last: ' + last.filter(s=>s.w||s.r).map(s=>`${s.w||'?'}×${s.r||'?'}`).join(', ') : '';
@@ -669,20 +689,66 @@ function walkCard(it, i){
     </div>
   </div>`;
 }
+function swimCard(it, i){
+  const swapSel = swapIdx===i ?
+    `<select onchange="doSwap(this,${i})" style="margin-top:10px">
+      <option value="">Swap to…</option>${exOptions()}</select>` : '';
+  return `<div class="card">
+    <h3><span class="bar run"></span>Swim<span class="target">laps</span>
+      <button class="ictl" onclick="swapItem(${i})" title="swap">⇄</button>
+      <button class="ictl" onclick="removeItem(${i})" title="remove">×</button></h3>
+    ${swapSel}
+    <div class="runrow">
+      <div style="flex:1"><input type="number" inputmode="numeric" placeholder="30" value="${it.min||''}"
+        oninput="cardioVal(${i},'min',this.value)"><div class="rlab">min</div></div>
+      <div style="flex:1"><input type="number" inputmode="numeric" placeholder="500" value="${it.yd||''}"
+        oninput="cardioVal(${i},'yd',this.value)"><div class="rlab">yards (opt.)</div></div>
+    </div>
+  </div>`;
+}
+function bikeCard(it, i){
+  const swapSel = swapIdx===i ?
+    `<select onchange="doSwap(this,${i})" style="margin-top:10px">
+      <option value="">Swap to…</option>${exOptions()}</select>` : '';
+  return `<div class="card">
+    <h3><span class="bar run"></span>Bike<span class="target">easy spin or intervals</span>
+      <button class="ictl" onclick="swapItem(${i})" title="swap">⇄</button>
+      <button class="ictl" onclick="removeItem(${i})" title="remove">×</button></h3>
+    ${swapSel}
+    <div class="runrow">
+      <div style="flex:1"><input type="number" inputmode="numeric" placeholder="30" value="${it.min||''}"
+        oninput="cardioVal(${i},'min',this.value)"><div class="rlab">min</div></div>
+      <div style="flex:1"><input type="number" inputmode="decimal" step="0.1" placeholder="8.0" value="${it.mi||''}"
+        oninput="cardioVal(${i},'mi',this.value)"><div class="rlab">miles (opt.)</div></div>
+    </div>
+    <div class="pace" id="mph${i}">${mphStr(it)}</div>
+  </div>`;
+}
 function paceStr(r){
   const t = (+r.min||0)*60 + (+r.sec||0), mi = +r.mi||0;
   if(!t || !mi) return '';
   const p = t/mi, pm = Math.floor(p/60), ps = Math.round(p%60);
   return `Pace ${pm}:${String(ps).padStart(2,'0')} /mi`;
 }
-function sessionCard(s){
+function mphStr(r){
+  const min = +r.min||0, mi = +r.mi||0;
+  if(!min || !mi) return '';
+  return (mi/(min/60)).toFixed(1) + ' mph';
+}
+function sessionLines(s){
   const parts = [];
   for(const k in s.entries){
-    const t = topSet(s.entries[k]);
-    if(t && t.w) parts.push(`${exName(k)} ${t.w}×${t.r||'?'}`);
+    const sets = s.entries[k].filter(x=>x.w||x.r).map(x=>`${x.w||'–'}×${x.r||'?'}`).join(', ');
+    if(sets) parts.push(`${exName(k)} ${sets}`);
   }
-  if(s.run && s.run.mi) parts.push(`Run ${s.run.min||0}:${String(s.run.sec||0).padStart(2,'0')} · ${s.run.mi} mi`);
-  if(s.walk && s.walk.min) parts.push(`Walk ${s.walk.min} min`);
+  if(s.run && (s.run.min||s.run.mi)) parts.push(`Run ${s.run.min||0}:${String(s.run.sec||0).padStart(2,'0')}${s.run.mi ? ' · '+s.run.mi+' mi' : ''}`);
+  if(s.walk && (s.walk.min||s.walk.mi)) parts.push(`Walk ${s.walk.min||'?'} min${s.walk.mi ? ' · '+s.walk.mi+' mi' : ''}`);
+  if(s.swim && (s.swim.min||s.swim.yd)) parts.push(`Swim ${s.swim.min||'?'} min${s.swim.yd ? ' · '+s.swim.yd+' yd' : ''}`);
+  if(s.bike && (s.bike.min||s.bike.mi)) parts.push(`Bike ${s.bike.min||'?'} min${s.bike.mi ? ' · '+s.bike.mi+' mi' : ''}`);
+  return parts;
+}
+function sessionCard(s){
+  const parts = sessionLines(s);
   const vol = sessionVolume(s);
   const cal = sessionCalories(s);
   const meta = [vol ? fmtVol(vol)+' lb' : null, cal ? '~'+cal+' cal' : null, s.dur ? s.dur+' min' : null].filter(Boolean).join(' · ');
@@ -711,7 +777,7 @@ function builderCard(){
       <div class="addrow"><input type="text" id="newexname" placeholder="Exercise name"></div>
       <div class="addrow">
         <select id="newextag">
-          <option value="push">Push</option><option value="pull">Pull</option><option value="legs">Legs</option>
+          <option value="push">Push</option><option value="pull">Pull</option><option value="legs">Legs</option><option value="core">Core</option>
         </select>
         <button onclick="createCustom()">Add</button>
       </div>
@@ -719,7 +785,7 @@ function builderCard(){
   </div>`;
 }
 function inferType(d){
-  const counts = {push:0, pull:0, legs:0};
+  const counts = {push:0, pull:0, legs:0, core:0};
   let cardioOnly = true;
   d.items.forEach(it=>{
     const inf = exInfo(it.k);
@@ -778,6 +844,7 @@ function setVal(i,j,f,v){ stamp(); draft().items[i].sets[j][f]=v; persist(); ren
 function cardioVal(i,f,v){
   stamp(); const it = draft().items[i]; it[f]=v; persist();
   const p = document.getElementById('pace'+i); if(p) p.textContent = paceStr(it);
+  const m = document.getElementById('mph'+i); if(m) m.textContent = mphStr(it);
 }
 function noteVal(v){ draft().note=v; persist(); }
 function addSet(i){ draft().items[i].sets.push({w:'',r:'',done:false}); persist(); renderWorkout(); }
@@ -802,7 +869,7 @@ function finishDay(){
   const d = state.drafts[selDate];
   if(!d || !d.items.length) return;
   const entries = {}; const order = [];
-  let run = null, walk = null;
+  let run = null, walk = null, swim = null, bike = null;
   d.items.forEach(it=>{
     if(it.k === '__run'){
       if(it.min||it.sec||it.mi){ run = {min:it.min, sec:it.sec, mi:it.mi}; order.push('__run'); }
@@ -812,13 +879,21 @@ function finishDay(){
       if(it.min||it.mi){ walk = {min:it.min, mi:it.mi}; order.push('__walk'); }
       return;
     }
+    if(it.k === '__swim'){
+      if(it.min||it.yd){ swim = {min:it.min, yd:it.yd}; order.push('__swim'); }
+      return;
+    }
+    if(it.k === '__bike'){
+      if(it.min||it.mi){ bike = {min:it.min, mi:it.mi}; order.push('__bike'); }
+      return;
+    }
     const filled = it.sets.filter(s=>s.w||s.r);
     if(filled.length){
       if(!entries[it.k]) order.push(it.k);
       entries[it.k] = (entries[it.k]||[]).concat(filled);
     }
   });
-  if(!Object.keys(entries).length && !run && !walk){
+  if(!Object.keys(entries).length && !run && !walk && !swim && !bike){
     flash('Nothing logged yet — fill in at least one set or the cardio.');
     return;
   }
@@ -827,7 +902,7 @@ function finishDay(){
 
   if(d.editId){
     const s = state.sessions.find(x=>x.id===d.editId);
-    if(s) Object.assign(s, {entries, run, walk, note:d.note||'', label, type, order});
+    if(s) Object.assign(s, {entries, run, walk, swim, bike, note:d.note||'', label, type, order});
     delete state.drafts[selDate];
     persist();
     renderWeek(); renderWorkout(); renderStats();
@@ -836,7 +911,7 @@ function finishDay(){
 
   const id = Date.now();
   const dur = d.startedAt ? Math.max(1, Math.round((Date.now() - d.startedAt)/60000)) : null;
-  state.sessions.push({id, date:selDate, label, type, entries, run, walk, note:d.note||'', dur, order});
+  state.sessions.push({id, date:selDate, label, type, entries, run, walk, swim, bike, note:d.note||'', dur, order});
   state.sessions.sort((a,b)=> a.date<b.date ? -1 : a.date>b.date ? 1 : a.id-b.id);
   const prs = detectPRs(entries, id);
   if(d.preset && d.preset.id) state.lastPreset = d.preset.id;
@@ -850,11 +925,14 @@ function editSession(id){
   const s = state.sessions.find(x=>x.id===id); if(!s) return;
   const items = []; const used = new Set();
   const seq = (s.order && s.order.length) ? s.order :
-    [...Object.keys(s.entries||{}), ...(s.run?['__run']:[]), ...(s.walk?['__walk']:[])];
+    [...Object.keys(s.entries||{}), ...(s.run?['__run']:[]), ...(s.walk?['__walk']:[]),
+     ...(s.swim?['__swim']:[]), ...(s.bike?['__bike']:[])];
   seq.forEach(k=>{
     if(used.has(k)) return; used.add(k);
     if(k === '__run'){ if(s.run) items.push({k:'__run', min:s.run.min||'', sec:s.run.sec||'', mi:s.run.mi||''}); return; }
     if(k === '__walk'){ if(s.walk) items.push({k:'__walk', min:s.walk.min||'', mi:s.walk.mi||''}); return; }
+    if(k === '__swim'){ if(s.swim) items.push({k:'__swim', min:s.swim.min||'', yd:s.swim.yd||''}); return; }
+    if(k === '__bike'){ if(s.bike) items.push({k:'__bike', min:s.bike.min||'', mi:s.bike.mi||''}); return; }
     if(s.entries && s.entries[k])
       items.push({k, sets:s.entries[k].map(x=>({w:x.w||'', r:x.r||'', done:true}))});
   });
@@ -971,10 +1049,25 @@ function sessionCalories(s){
     if(mi) cal += 0.53 * lb * mi;
     else if(min) cal += 3.3 * kg * (min/60);
   }
+  if(s.swim){
+    const min = +s.swim.min || 0;
+    cardioMin += min;
+    if(min) cal += 6.0 * kg * (min/60);        // moderate lap swimming
+  }
+  if(s.bike){
+    const min = +s.bike.min || 0;
+    const mi = +s.bike.mi || 0;
+    cardioMin += min;
+    if(min) cal += 7.5 * kg * (min/60);        // moderate cycling
+    else if(mi) cal += 0.3 * lb * mi;
+  }
   const nSets = Object.values(s.entries||{}).reduce((t,a)=>t+a.length, 0);
   if(nSets){
-    const liftMin = s.dur ? Math.max(nSets*1.5, s.dur - cardioMin) : nSets*3;
-    cal += 4.5 * kg * (liftMin/60);            // resistance training incl. rest
+    // resistance work incl. rest, bounded to 1.5-4.5 min per set so a
+    // draft left open all day cannot inflate the session duration
+    const raw = s.dur ? s.dur - cardioMin : nSets*3;
+    const liftMin = Math.min(nSets*4.5, Math.max(nSets*1.5, raw));
+    cal += 4.5 * kg * (liftMin/60);
   }
   return cal ? Math.round(cal) : null;
 }
@@ -1019,13 +1112,7 @@ function renderHistory(){
     return;
   }
   el.innerHTML = [...state.sessions].reverse().map(s=>{
-    const parts = [];
-    for(const k in s.entries){
-      const t = topSet(s.entries[k]);
-      if(t && t.w) parts.push(`${exName(k)} ${t.w}×${t.r||'?'}`);
-    }
-    if(s.run && s.run.mi) parts.push(`Run ${s.run.min||0}:${String(s.run.sec||0).padStart(2,'0')} · ${s.run.mi} mi`);
-    if(s.walk && s.walk.min) parts.push(`Walk ${s.walk.min} min`);
+    const parts = sessionLines(s);
     const vol = sessionVolume(s);
     const cal = sessionCalories(s);
     const meta = [vol ? fmtVol(vol)+' lb' : null, cal ? '~'+cal+' cal' : null, s.dur ? s.dur+' min' : null].filter(Boolean).join(' · ');
@@ -1058,6 +1145,7 @@ function renderBigStats(){
     tonnage += sessionVolume(s);
     if(s.run && s.run.mi) miles += +s.run.mi;
     if(s.walk && s.walk.mi) miles += +s.walk.mi;
+    if(s.bike && s.bike.mi) miles += +s.bike.mi;
   });
   const dates = [...new Set(state.sessions.map(s=>s.date))].sort();
   let best = 0, cur = 0;
@@ -1201,7 +1289,7 @@ function svgBars(rows, cfg){
   });
   return `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">${g}${bars}${labels}${xl}</svg>`;
 }
-const TAGCOLOR = {push:'var(--push)', pull:'var(--pull)', legs:'var(--legs)'};
+const TAGCOLOR = {push:'var(--push)', pull:'var(--pull)', legs:'var(--legs)', core:'var(--core)'};
 function renderProgress(){
   const sel = document.getElementById('progsel');
   const el = document.getElementById('progress');
