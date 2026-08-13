@@ -255,6 +255,26 @@
   .ctick{font-family:var(--mono); font-size:10px; fill:var(--faint)}
   .clab{font-family:var(--mono); font-size:11px; font-weight:600; fill:var(--ink)}
   .cdetail{font-family:var(--mono); font-size:11.5px; color:var(--mut); margin-top:4px; min-height:15px; text-align:center}
+  .legend{display:flex; gap:14px; justify-content:center; margin-top:8px}
+  .legend .lg{font-size:10px; color:var(--mut); display:flex; align-items:center; gap:5px; text-transform:uppercase; letter-spacing:.06em}
+  .legend .lg i{width:8px; height:8px; border-radius:2px; display:inline-block}
+
+  /* progress extras */
+  .seccap{font-size:10px; color:var(--faint); text-transform:uppercase; letter-spacing:.09em; margin:2px 2px 6px}
+  .stat .d{font-size:9.5px; font-family:var(--mono); margin-top:1px}
+  .stat .d.up{color:var(--run)} .stat .d.down{color:var(--push)} .stat .d.flat{color:var(--faint)}
+  #heatmap{display:flex; gap:3px; margin-top:11px}
+  #heatmap .hcol{display:flex; flex-direction:column; gap:3px; flex:1}
+  #heatmap .hsq{aspect-ratio:1; border-radius:3px; background:var(--card2)}
+  #heatmap .hsq.push{background:var(--push)} #heatmap .hsq.pull{background:var(--pull)}
+  #heatmap .hsq.walk{background:var(--run)} #heatmap .hsq.legs,#heatmap .hsq.custom{background:var(--legs)}
+  #heatmap .hsq.core{background:var(--core)}
+  #heatmap .hsq.future{opacity:.35}
+  #heatmap .hsq.today{outline:1.5px solid var(--mut); outline-offset:1px}
+  .milewrap{display:flex; flex-wrap:wrap; gap:6px; margin-top:10px}
+  .mile{font-size:11px; font-family:var(--mono); color:var(--mut);
+    border:1px solid var(--line); border-radius:16px; padding:3.5px 10px}
+  .mile.new{color:var(--legs); border-color:rgba(229,185,63,.5)}
   .empty{color:var(--faint); font-size:13.5px; text-align:center; padding:28px 10px; line-height:1.6}
 
   /* bodyweight modal-ish */
@@ -344,16 +364,33 @@
       <input type="file" id="importfile" accept=".json" style="display:none" onchange="importData(this)">
     </div>
   </div>
+  <div class="card" id="customcard" style="display:none">
+    <h3><span class="bar core"></span>Custom exercises</h3>
+    <div class="note">Tap a name to rename it. Ones with logged history can't be deleted.</div>
+    <div id="customlist"></div>
+  </div>
 </div>
 
 <div class="tab" id="tab-progress">
+  <div class="seccap" id="recapcap" style="display:none">This week vs last</div>
+  <div class="stats" id="recap" style="display:none"></div>
+  <div class="seccap">Lifetime</div>
   <div class="stats" id="bignums"></div>
+  <div class="card" id="heatcard" style="display:none">
+    <h3><span class="bar run"></span>Consistency<span class="target">12 weeks</span></h3>
+    <div id="heatmap"></div>
+  </div>
+  <select id="progsel" onchange="renderProgress()"></select>
+  <div id="progress"></div>
   <div class="card" id="recordscard" style="display:none">
     <h3><span class="bar legs"></span>Records</h3>
     <div id="records"></div>
   </div>
-  <select id="progsel" onchange="renderProgress()"></select>
-  <div id="progress"></div>
+  <div class="card" id="milecard" style="display:none">
+    <h3><span class="bar legs"></span>Milestones</h3>
+    <div class="milewrap" id="miles"></div>
+    <div class="note" id="milenext"></div>
+  </div>
 </div>
 
 <nav>
@@ -413,7 +450,7 @@ const PRESETS = [
 ];
 
 let state = { sessions:[], weights:[], drafts:{}, customEx:{}, lastPreset:0 };
-let selDate = null, weekMon = null, swapIdx = null, qhKey = null;
+let selDate = null, weekMon = null, swapIdx = null, qhKey = null, menuIdx = null;
 let saveTimer = null;
 
 /* ---------- storage (localStorage: lives on your phone) ---------- */
@@ -524,7 +561,7 @@ function renderWeek(){
       <span class="t">${'MTWTFSS'[i]}</span><span class="n">${+date.slice(8)}</span>${dot}</div>`;
   }).join('');
 }
-function pickDate(d){ selDate = d; swapIdx = null; qhKey = null; renderWeek(); renderWorkout(); renderStats(); renderBw(); }
+function pickDate(d){ selDate = d; swapIdx = null; qhKey = null; menuIdx = null; renderWeek(); renderWorkout(); renderStats(); renderBw(); }
 function wkShift(n){ weekMon = addDays(weekMon, 7*n); renderWeek(); }
 function wkToday(){ selDate = todayISO(); weekMon = mondayOf(selDate); swapIdx = null; qhKey = null;
   renderWeek(); renderWorkout(); renderStats(); renderBw(); }
@@ -584,15 +621,36 @@ function removeItem(i){
   const d = draft();
   d.items.splice(i,1);
   if(!d.items.length) delete d.preset;
-  swapIdx = null;
+  swapIdx = null; menuIdx = null;
   persist(); renderWorkout(); renderWeek();
 }
 function swapItem(i){ swapIdx = (swapIdx===i ? null : i); renderWorkout(); }
 function doSwap(sel, i){
   const v = sel.value; if(!v) return;
   draft().items[i] = newItem(v);
-  swapIdx = null;
+  swapIdx = null; menuIdx = null;
   persist(); renderWorkout();
+}
+function itemMenu(i){ menuIdx = (menuIdx===i ? null : i); swapIdx = null; renderWorkout(); }
+function moveItem(i, dir){
+  const a = draft().items;
+  const j = i + dir;
+  if(j < 0 || j >= a.length) return;
+  [a[i], a[j]] = [a[j], a[i]];
+  menuIdx = j;
+  persist(); renderWorkout();
+}
+function itemCtl(i){
+  return `<button class="ictl" onclick="itemMenu(${i})" title="options">⋯</button>`;
+}
+function itemMenuRow(i){
+  if(menuIdx !== i) return '';
+  return `<div class="exbtns">
+    <button class="mini" onclick="moveItem(${i},-1)">↑ up</button>
+    <button class="mini" onclick="moveItem(${i},1)">↓ down</button>
+    <button class="mini" onclick="swapItem(${i})">⇄ swap</button>
+    <button class="mini" onclick="removeItem(${i})">× remove</button>
+  </div>`;
 }
 
 /* ---------- day rendering ---------- */
@@ -618,8 +676,13 @@ function itemCard(it, i){
   const inf = exInfo(it.k) || {tag:'push', reps:'', repMax:99};
   const last = lastSetsFor(it.k);
   const lastTxt = last ? 'Last: ' + last.filter(s=>s.w||s.r).map(s=>`${s.w||'?'}×${s.r||'?'}`).join(', ') : '';
-  const beat = last && last.length && last.every(s=>s.r && +s.r >= inf.repMax) ?
-    '<span class="beat">Top of range hit — add weight</span>' : '';
+  let beat = '';
+  if(last && last.length && last.every(s=>s.r && +s.r >= inf.repMax)){
+    const lastMax = Math.max(...last.filter(s=>s.w).map(s=>+s.w), 0);
+    const sugg = inf.tag==='core' ? 'add weight or slow the tempo' :
+      lastMax ? 'try ' + (lastMax + (inf.tag==='legs' ? 10 : 5)) + ' lb' : 'add weight';
+    beat = `<span class="beat">Top of range hit — ${sugg}</span>`;
+  }
   const rows = it.sets.map((s,j)=>{
     const ph = last && last[j] ? last[j] : {w:'',r:''};
     return `<div class="setrow ${s.done?'done':''}">
@@ -637,8 +700,8 @@ function itemCard(it, i){
   return `<div class="card">
     <h3><span class="bar ${inf.tag}"></span><span class="exname" onclick="toggleQh(${i})">${exInfo(it.k)?exInfo(it.k).name:it.k}</span>
       <span class="target">${it.sets.length} × ${inf.reps||''}</span>
-      <button class="ictl" onclick="swapItem(${i})" title="swap">⇄</button>
-      <button class="ictl" onclick="removeItem(${i})" title="remove">×</button></h3>
+      ${itemCtl(i)}</h3>
+    ${itemMenuRow(i)}
     ${it.note ? `<div class="note">${it.note}</div>` : ''}
     ${lastTxt ? `<div class="last">${lastTxt}</div>` : ''}
     ${beat}
@@ -658,8 +721,8 @@ function runCard(it, i){
       <option value="">Swap to…</option>${exOptions()}</select>` : '';
   return `<div class="card">
     <h3><span class="bar run"></span>Run<span class="target">~1.5 mi</span>
-      <button class="ictl" onclick="swapItem(${i})" title="swap">⇄</button>
-      <button class="ictl" onclick="removeItem(${i})" title="remove">×</button></h3>
+      ${itemCtl(i)}</h3>
+    ${itemMenuRow(i)}
     ${swapSel}
     <div class="runrow">
       <div style="flex:1"><input type="number" inputmode="numeric" placeholder="14" value="${it.min||''}"
@@ -678,8 +741,8 @@ function walkCard(it, i){
       <option value="">Swap to…</option>${exOptions()}</select>` : '';
   return `<div class="card">
     <h3><span class="bar run"></span>Walk<span class="target">easy</span>
-      <button class="ictl" onclick="swapItem(${i})" title="swap">⇄</button>
-      <button class="ictl" onclick="removeItem(${i})" title="remove">×</button></h3>
+      ${itemCtl(i)}</h3>
+    ${itemMenuRow(i)}
     ${swapSel}
     <div class="runrow">
       <div style="flex:1"><input type="number" inputmode="numeric" placeholder="30" value="${it.min||''}"
@@ -695,8 +758,8 @@ function swimCard(it, i){
       <option value="">Swap to…</option>${exOptions()}</select>` : '';
   return `<div class="card">
     <h3><span class="bar run"></span>Swim<span class="target">laps</span>
-      <button class="ictl" onclick="swapItem(${i})" title="swap">⇄</button>
-      <button class="ictl" onclick="removeItem(${i})" title="remove">×</button></h3>
+      ${itemCtl(i)}</h3>
+    ${itemMenuRow(i)}
     ${swapSel}
     <div class="runrow">
       <div style="flex:1"><input type="number" inputmode="numeric" placeholder="30" value="${it.min||''}"
@@ -712,8 +775,8 @@ function bikeCard(it, i){
       <option value="">Swap to…</option>${exOptions()}</select>` : '';
   return `<div class="card">
     <h3><span class="bar run"></span>Bike<span class="target">easy spin or intervals</span>
-      <button class="ictl" onclick="swapItem(${i})" title="swap">⇄</button>
-      <button class="ictl" onclick="removeItem(${i})" title="remove">×</button></h3>
+      ${itemCtl(i)}</h3>
+    ${itemMenuRow(i)}
     ${swapSel}
     <div class="runrow">
       <div style="flex:1"><input type="number" inputmode="numeric" placeholder="30" value="${it.min||''}"
@@ -911,15 +974,18 @@ function finishDay(){
 
   const id = Date.now();
   const dur = d.startedAt ? Math.max(1, Math.round((Date.now() - d.startedAt)/60000)) : null;
+  const preMiles = milestonesAchieved();
   state.sessions.push({id, date:selDate, label, type, entries, run, walk, swim, bike, note:d.note||'', dur, order});
   state.sessions.sort((a,b)=> a.date<b.date ? -1 : a.date>b.date ? 1 : a.id-b.id);
   const prs = detectPRs(entries, id);
+  const newMiles = milestonesAchieved().filter(m=>!preMiles.includes(m));
   if(d.preset && d.preset.id) state.lastPreset = d.preset.id;
   delete state.drafts[selDate];
   persist();
   const prTxt = prs.length ? ` <span class="pr-flash">PR: ${prs.join(', ')}!</span>` : '';
-  flashHTML('Saved.' + prTxt);
-  setTimeout(()=>{ renderWeek(); renderWorkout(); renderStats(); }, prs.length ? 2200 : 900);
+  const mTxt = newMiles.length ? ` <span class="pr-flash">🏆 ${newMiles.join(' · ')}</span>` : '';
+  flashHTML('Saved.' + prTxt + mTxt);
+  setTimeout(()=>{ renderWeek(); renderWorkout(); renderStats(); }, (prs.length || newMiles.length) ? 2200 : 900);
 }
 function editSession(id){
   const s = state.sessions.find(x=>x.id===id); if(!s) return;
@@ -1127,6 +1193,35 @@ function renderHistory(){
     </div>`;
   }).join('');
 }
+function renderCustoms(){
+  const card = document.getElementById('customcard');
+  const ks = Object.keys(state.customEx);
+  if(!ks.length){ card.style.display='none'; return; }
+  card.style.display='block';
+  document.getElementById('customlist').innerHTML = ks.map(k=>{
+    const used = state.sessions.some(s=>s.entries && s.entries[k]);
+    return `<div class="rec">
+      <span class="name" style="cursor:pointer" onclick="renameCustom('${k}')">${state.customEx[k].name}</span>
+      <span class="when">${state.customEx[k].tag}</span>
+      ${used ? '<span class="when">in use</span>' : `<button class="del" data-k="${k}" onclick="delCustom(this)">×</button>`}
+    </div>`;
+  }).join('');
+}
+function renameCustom(k){
+  const cur = state.customEx[k];
+  if(!cur) return;
+  const n = prompt('Rename exercise:', cur.name);
+  if(n && n.trim()){ cur.name = n.trim(); persist(); renderCustoms(); }
+}
+function delCustom(btn){
+  if(!btn.classList.contains('arm')){
+    btn.classList.add('arm'); btn.textContent = 'delete?';
+    setTimeout(()=>{ btn.classList.remove('arm'); btn.textContent = '×'; }, 2500);
+    return;
+  }
+  delete state.customEx[btn.dataset.k];
+  persist(); renderCustoms();
+}
 function delSession(btn){
   if(!btn.classList.contains('arm')){
     btn.classList.add('arm'); btn.textContent='delete?';
@@ -1159,6 +1254,100 @@ function renderBigStats(){
     <div class="stat"><div class="v">${miles.toFixed(1)}</div><div class="l">miles</div></div>
     <div class="stat"><div class="v">${state.sessions.length}</div><div class="l">workouts</div></div>
     <div class="stat"><div class="v">${best}</div><div class="l">best streak</div></div>`;
+}
+function weekAgg(wk){
+  const out = {n:0, vol:0, mi:0, cal:0};
+  state.sessions.forEach(s=>{
+    if(mondayOf(s.date) !== wk) return;
+    out.n++; out.vol += sessionVolume(s); out.cal += sessionCalories(s)||0;
+    ['run','walk','bike'].forEach(f=>{ if(s[f] && s[f].mi) out.mi += +s[f].mi; });
+  });
+  return out;
+}
+function renderRecap(){
+  const cap = document.getElementById('recapcap'), el = document.getElementById('recap');
+  const wk = mondayOf(todayISO());
+  const cur = weekAgg(wk), prev = weekAgg(addDays(wk, -7));
+  if(!cur.n && !prev.n){ cap.style.display='none'; el.style.display='none'; return; }
+  cap.style.display='block'; el.style.display='flex';
+  const tile = (v, l, d, fmt) => {
+    const cls = d===0 ? 'flat' : d>0 ? 'up' : 'down';
+    const dv = d===0 ? '±0' : (d>0?'+':'−') + fmt(Math.abs(d));
+    return `<div class="stat"><div class="v">${fmt(v)}</div><div class="l">${l}</div><div class="d ${cls}">${dv}</div></div>`;
+  };
+  el.innerHTML =
+    tile(cur.n, 'workouts', cur.n-prev.n, x=>x) +
+    tile(cur.vol, 'week lb', cur.vol-prev.vol, x=>x ? fmtVol(Math.round(x)) : '0') +
+    tile(cur.mi, 'miles', cur.mi-prev.mi, x=>(+x).toFixed(1)) +
+    tile(cur.cal, '~cal', cur.cal-prev.cal, x=>Math.round(x).toLocaleString('en-US'));
+}
+function renderHeatmap(){
+  const card = document.getElementById('heatcard');
+  if(!state.sessions.length){ card.style.display='none'; return; }
+  card.style.display='block';
+  const today = todayISO();
+  const startMon = addDays(mondayOf(today), -7*11);
+  let html = '';
+  for(let w=0; w<12; w++){
+    let col = '';
+    for(let d=0; d<7; d++){
+      const date = addDays(startMon, w*7+d);
+      const ss = sessionsOn(date);
+      const cls = ['hsq',
+        ss.length ? typeOf(ss[ss.length-1]) : '',
+        date===today ? 'today' : '',
+        date>today ? 'future' : ''].filter(Boolean).join(' ');
+      col += `<div class="${cls}"></div>`;
+    }
+    html += `<div class="hcol">${col}</div>`;
+  }
+  document.getElementById('heatmap').innerHTML = html;
+}
+function lifetimeTotals(){
+  let tonnage = 0, miles = 0;
+  state.sessions.forEach(s=>{
+    tonnage += sessionVolume(s);
+    ['run','walk','bike'].forEach(f=>{ if(s[f] && s[f].mi) miles += +s[f].mi; });
+  });
+  const dates = [...new Set(state.sessions.map(s=>s.date))].sort();
+  let best = 0, cur = 0;
+  for(let i=0; i<dates.length; i++){
+    if(i>0 && (new Date(dates[i]) - new Date(dates[i-1])) === 86400000) cur++;
+    else cur = 1;
+    best = Math.max(best, cur);
+  }
+  return {workouts: state.sessions.length, tonnage, miles, best};
+}
+const MILEDEFS = [
+  ['workouts', '🎯', [10,25,50,100,250,500], v=>v+' workouts'],
+  ['tonnage',  '🏋️', [50000,100000,250000,500000,1000000], v=>fmtVol(v)+' lb lifted'],
+  ['miles',    '👟', [10,25,50,100,250], v=>v+' miles'],
+  ['best',     '🔥', [7,14,30,60], v=>v+'-day streak'],
+];
+function milestonesAchieved(){
+  const t = lifetimeTotals();
+  const out = [];
+  MILEDEFS.forEach(([key, icon, steps, fmt])=>{
+    steps.forEach(v=>{ if(t[key] >= v) out.push(icon+' '+fmt(v)); });
+  });
+  return out;
+}
+function renderMilestones(){
+  const card = document.getElementById('milecard');
+  const done = milestonesAchieved();
+  if(!done.length){ card.style.display='none'; return; }
+  card.style.display='block';
+  document.getElementById('miles').innerHTML =
+    done.map(m=>`<span class="mile">${m}</span>`).join('');
+  const t = lifetimeTotals();
+  let next = null;
+  MILEDEFS.forEach(([key, icon, steps, fmt])=>{
+    const n = steps.find(v=>t[key] < v);
+    if(!n) return;
+    const ratio = t[key]/n;
+    if(!next || ratio > next.ratio) next = {ratio, txt: fmt(n)};
+  });
+  document.getElementById('milenext').textContent = next ? 'Next up: ' + next.txt : '';
 }
 function renderRecords(){
   const card = document.getElementById('recordscard');
@@ -1196,6 +1385,7 @@ function renderProgressOptions(){
     '<option value="__bw">Body weight</option>',
     '<option value="__cal">Calories / week</option>',
     '<option value="__vol">Session volume</option>',
+    '<option value="__sets">Weekly sets by group</option>',
     '<option value="__run">Run pace</option>'
   ].concat([...keys].map(k=>`<option value="${k}">${exName(k)}</option>`));
   const prev = sel.value;
@@ -1224,7 +1414,8 @@ function svgLine(rows, cfg){
   const W=400, H=190, L=44, R=14, T=24, B=22;
   const vfmt = cfg.vfmt || cfg.yfmt;
   const vals = rows.map(r=>r.v);
-  let lo = Math.min(...vals), hi = Math.max(...vals);
+  const dvals = cfg.trendVals ? vals.concat(cfg.trendVals) : vals;
+  let lo = Math.min(...dvals), hi = Math.max(...dvals);
   if(lo === hi){ lo -= 1; hi += 1; }
   const pad = (hi-lo)*0.10; lo -= pad; hi += pad;
   const X = i => rows.length===1 ? L+(W-L-R)/2 : L + i*(W-L-R)/(rows.length-1);
@@ -1239,8 +1430,16 @@ function svgLine(rows, cfg){
   let line = '';
   if(pts.length > 1){
     const path = pts.map((p,i)=>(i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' ');
-    line = `<path d="${path} L${pts[pts.length-1][0].toFixed(1)} ${H-B} L${pts[0][0].toFixed(1)} ${H-B} Z" fill="${cfg.color}" opacity=".1"/>`+
-      `<path d="${path}" fill="none" stroke="${cfg.color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
+    const area = `<path d="${path} L${pts[pts.length-1][0].toFixed(1)} ${H-B} L${pts[0][0].toFixed(1)} ${H-B} Z" fill="${cfg.color}" opacity=".1"/>`;
+    if(cfg.trendVals && cfg.trendVals.length === rows.length){
+      const tp = cfg.trendVals.map((v,i)=>(i?'L':'M')+X(i).toFixed(1)+' '+Y(v).toFixed(1)).join(' ');
+      line = area +
+        `<path d="${path}" fill="none" stroke="${cfg.color}" stroke-width="1.5" opacity=".35" stroke-linejoin="round" stroke-linecap="round"/>`+
+        `<path d="${tp}" fill="none" stroke="${cfg.color}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>`;
+    } else {
+      line = area +
+        `<path d="${path}" fill="none" stroke="${cfg.color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
+    }
   }
   const lastI = rows.length-1;
   const bestI = cfg.lowerBetter ? vals.indexOf(Math.min(...vals)) : vals.indexOf(Math.max(...vals));
@@ -1289,6 +1488,41 @@ function svgBars(rows, cfg){
   });
   return `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">${g}${bars}${labels}${xl}</svg>`;
 }
+const SETGROUPS = [['push','var(--push)'],['pull','var(--pull)'],['legs','var(--legs)'],['core','var(--core)']];
+function svgStacked(rows){
+  const W=400, H=190, L=44, R=8, T=24, B=22;
+  const hi = Math.max(...rows.map(r=>r.v), 1) * 1.12;
+  const Y = v => T + (1-v/hi)*(H-T-B);
+  let g = '';
+  niceTicks(0, hi, 3).forEach(t=>{
+    if(t===0) return;
+    const y = Y(t).toFixed(1);
+    g += `<line x1="${L}" x2="${W-R}" y1="${y}" y2="${y}" stroke="var(--line)" stroke-width="1"/>`+
+      `<text x="${L-6}" y="${+y+3.5}" text-anchor="end" class="ctick">${Math.round(t)}</text>`;
+  });
+  g += `<line x1="${L}" x2="${W-R}" y1="${H-B}" y2="${H-B}" stroke="var(--line)" stroke-width="1"/>`;
+  const slot = (W-L-R)/rows.length;
+  const bw = Math.min(24, slot-8);
+  const maxI = rows.reduce((m,r,i)=>r.v>rows[m].v?i:m, 0);
+  let bars = '', labels = '', xl = '';
+  rows.forEach((r,i)=>{
+    const x = L + i*slot + (slot-bw)/2;
+    let yb = H-B;
+    SETGROUPS.forEach(([t,c])=>{
+      const v = r.segs[t]; if(!v) return;
+      const h = (v/hi)*(H-T-B);
+      const gap = yb === H-B ? 0 : 2;   // 2px surface gap between stacked segments
+      bars += `<rect x="${x.toFixed(1)}" y="${(yb-h).toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(0.5, h-gap).toFixed(1)}" fill="${c}"/>`;
+      yb -= h;
+    });
+    if(r.v > 0 && (i===rows.length-1 || i===maxI))
+      labels += `<text x="${(x+bw/2).toFixed(1)}" y="${(Y(r.v)-6).toFixed(1)}" text-anchor="middle" class="clab">${r.v}</text>`;
+    bars += `<rect x="${(L+i*slot).toFixed(1)}" y="${T}" width="${slot.toFixed(1)}" height="${H-T-B}" fill="transparent" style="cursor:pointer" onclick="chartTap(${i})"/>`;
+    if(i%2===0)
+      xl += `<text x="${(x+bw/2).toFixed(1)}" y="${H-5}" text-anchor="middle" class="ctick">${+r.d.slice(5,7)}/${+r.d.slice(8)}</text>`;
+  });
+  return `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">${g}${bars}${labels}${xl}</svg>`;
+}
 const TAGCOLOR = {push:'var(--push)', pull:'var(--pull)', legs:'var(--legs)', core:'var(--core)'};
 function renderProgress(){
   const sel = document.getElementById('progsel');
@@ -1296,13 +1530,16 @@ function renderProgress(){
   const key = sel.value;
   if(!key){ el.innerHTML = '<div class="empty">Log a workout first — progress charts build themselves from your history.</div>'; return; }
 
-  let rows = [], cfg, big = '', unit = '', meta = '', lowerBetter = false, neutral = false, bars = false;
+  let rows = [], cfg, big = '', unit = '', meta = '', lowerBetter = false, neutral = false, bars = false, stacked = false, legendHtml = '';
   if(key === '__bw'){
-    rows = state.weights.filter(w=>w.lbs).slice(-14).map(w=>({d:w.date, v:w.lbs, txt:w.lbs.toFixed(1)+' lb'}));
-    cfg = {color:'var(--pull)', yfmt:v=>Math.round(v), vfmt:v=>v.toFixed(1)};
+    const w = state.weights.filter(x=>x.lbs);
+    let t = null;
+    const ema = w.map(x=> t = (t===null ? x.lbs : t + 0.3*(x.lbs - t)));
+    rows = w.slice(-14).map(x=>({d:x.date, v:x.lbs, txt:x.lbs.toFixed(1)+' lb'}));
+    cfg = {color:'var(--pull)', yfmt:v=>Math.round(v), vfmt:v=>v.toFixed(1), trendVals: ema.slice(-14)};
     neutral = true;
     if(rows.length){ big = rows[rows.length-1].v.toFixed(1); unit = 'lb';
-      meta = `${rows.length} entries shown · the trend matters, not the number`; }
+      meta = `${rows.length} entries · thick line = smoothed trend, dots = scale weight`; }
   } else if(key === '__run'){
     rows = state.sessions.filter(s=>s.run && s.run.mi && (s.run.min||s.run.sec)).slice(-14).map(s=>{
       const t=(+s.run.min||0)*60+(+s.run.sec||0), p=t/(+s.run.mi);
@@ -1347,6 +1584,30 @@ function renderProgress(){
       big = '~'+latest.v.toLocaleString('en-US'); unit = 'cal · wk of '+fmtDate(latest.d);
       meta = 'estimated from bodyweight, sets & cardio — trust the trend, not the number';
     } else rows = [];
+  } else if(key === '__sets'){
+    stacked = true;
+    cfg = {};
+    const thisMon = mondayOf(todayISO());
+    rows = Array.from({length:8}, (_,i)=>{
+      const wk = addDays(thisMon, -7*(7-i));
+      const segs = {push:0, pull:0, legs:0, core:0};
+      state.sessions.filter(s=>mondayOf(s.date)===wk).forEach(s=>{
+        for(const k2 in s.entries){
+          const inf = exInfo(k2);
+          if(inf && segs[inf.tag] != null) segs[inf.tag] += s.entries[k2].filter(x=>x.w||x.r).length;
+        }
+      });
+      const v = segs.push + segs.pull + segs.legs + segs.core;
+      return {d:wk, v, segs, txt:`wk of ${fmtDate(wk)} · ${segs.push} push · ${segs.pull} pull · ${segs.legs} legs · ${segs.core} core`};
+    });
+    const withData = rows.filter(r=>r.v>0);
+    if(withData.length){
+      const latest = withData[withData.length-1];
+      big = latest.v; unit = 'sets · wk of '+fmtDate(latest.d);
+      meta = 'hard sets per week by muscle group';
+      legendHtml = '<div class="legend">' +
+        SETGROUPS.map(([t,c])=>`<span class="lg"><i style="background:${c}"></i>${t}</span>`).join('') + '</div>';
+    } else rows = [];
   } else {
     rows = state.sessions.filter(s=>s.entries[key]).slice(-14).map(s=>{
       const t = topSet(s.entries[key]);
@@ -1365,31 +1626,38 @@ function renderProgress(){
         if(e > be){ be = e; bt = topSet(s.entries[key]); bd = s.date; }
       });
       meta = `${n} session${n>1?'s':''}` + (bt && bt.w ? ` · best ${bt.w}×${bt.r} on ${fmtDate(bd)}` : '');
+      if(rows.length >= 4){
+        const l4 = rows.slice(-4).map(r=>r.v);
+        const mx = Math.max(...l4), mn = Math.min(...l4);
+        if(mx > 0 && (mx-mn)/mx < 0.02) meta += ' · e1RM flat last 4 — add weight or take a deload';
+      }
     }
   }
   if(!rows.length){ el.innerHTML = '<div class="empty">Nothing here yet.</div>'; progRows = []; return; }
   progRows = rows;
 
-  // delta vs ~4 weeks back (or the earliest shown)
+  // delta vs ~4 weeks back (or the earliest shown); uses the smoothed trend when one exists
   let deltaHtml = '';
-  if(rows.length > 1 && !bars){
+  if(rows.length > 1 && !bars && !stacked){
     const last = rows[rows.length-1];
     const cutoff = addDays(last.d, -28);
-    let base = rows[0];
-    for(const r of rows){ if(r.d <= cutoff) base = r; }
-    const diff = last.v - base.v;
+    let base = rows[0], baseIdx = 0;
+    rows.forEach((r,idx)=>{ if(r.d <= cutoff){ base = r; baseIdx = idx; } });
+    const tv = cfg.trendVals;
+    const diff = tv ? tv[tv.length-1] - tv[baseIdx] : last.v - base.v;
     if(base !== last){
       const good = lowerBetter ? diff < 0 : diff > 0;
       const cls = neutral || diff === 0 ? 'flat' : (good ? 'up' : 'down');
       const dv = lowerBetter ? (diff<0?'−':'+') + fmtPace(Math.abs(diff)) :
         (diff>=0?'+':'−') + (key==='__bw' ? Math.abs(diff).toFixed(1) : Math.round(Math.abs(diff)));
-      deltaHtml = `<span class="delta ${cls}">${diff===0 ? '±0' : dv}</span><span class="dsub">vs ${fmtDate(base.d)}</span>`;
+      deltaHtml = `<span class="delta ${cls}">${Math.abs(diff) < 0.05 ? '±0' : dv}</span><span class="dsub">${tv ? 'trend ' : ''}vs ${fmtDate(base.d)}</span>`;
     }
   }
 
   el.innerHTML = `<div class="card">
     <div class="phead"><span class="big">${big}</span><span class="u">${unit}</span>${deltaHtml}</div>
-    <div class="chartwrap">${bars ? svgBars(rows, cfg) : svgLine(rows, cfg)}</div>
+    <div class="chartwrap">${stacked ? svgStacked(rows) : bars ? svgBars(rows, cfg) : svgLine(rows, cfg)}</div>
+    ${legendHtml}
     <div class="cdetail" id="cdetail">tap a point for details</div>
     ${meta ? `<div class="note" style="text-align:center">${meta}</div>` : ''}
   </div>`;
@@ -1401,8 +1669,8 @@ function switchTab(name, btn){
   document.getElementById('tab-'+name).classList.add('on');
   document.querySelectorAll('nav button').forEach(b=>b.classList.remove('on'));
   btn.classList.add('on');
-  if(name==='history') renderHistory();
-  if(name==='progress'){ renderBigStats(); renderRecords(); renderProgressOptions(); renderProgress(); }
+  if(name==='history'){ renderHistory(); renderCustoms(); }
+  if(name==='progress'){ renderRecap(); renderBigStats(); renderHeatmap(); renderRecords(); renderMilestones(); renderProgressOptions(); renderProgress(); }
 }
 
 /* ---------- backup / restore ---------- */
