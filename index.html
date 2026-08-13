@@ -89,6 +89,7 @@
   .plate .n{font-size:16px; font-weight:700; line-height:1.1}
   .plate .t{font-size:8px; letter-spacing:.06em; color:var(--mut); text-transform:uppercase}
   .plate.future{opacity:.45}
+  .plate.rest{border-style:dashed; border-color:var(--faint)}
   .plate.logged.push{border-color:var(--push)} .plate.logged.pull{border-color:var(--pull)}
   .plate.logged.walk{border-color:var(--run)} .plate.logged.legs{border-color:var(--legs)}
   .plate.logged.custom{border-color:var(--legs)} .plate.logged.core{border-color:var(--core)}
@@ -269,6 +270,7 @@
   #heatmap .hsq.push{background:var(--push)} #heatmap .hsq.pull{background:var(--pull)}
   #heatmap .hsq.walk{background:var(--run)} #heatmap .hsq.legs,#heatmap .hsq.custom{background:var(--legs)}
   #heatmap .hsq.core{background:var(--core)}
+  #heatmap .hsq.rest{background:var(--line)}
   #heatmap .hsq.future{opacity:.35}
   #heatmap .hsq.today{outline:1.5px solid var(--mut); outline-offset:1px}
   .milewrap{display:flex; flex-wrap:wrap; gap:6px; margin-top:10px}
@@ -295,6 +297,19 @@
   .wlab{font-family:var(--disp); font-size:15px; letter-spacing:.14em; text-transform:uppercase; color:var(--mut); margin-top:7px}
   .wfun{font-size:13.5px; color:var(--ink); margin-top:9px; line-height:1.55; opacity:.9}
   @keyframes wup{from{opacity:0; transform:translateY(16px)} to{opacity:1; transform:none}}
+
+  /* undo toast */
+  #undotoast{
+    position:fixed; bottom:78px; left:50%; transform:translateX(-50%);
+    background:var(--card2); border:1px solid var(--line); color:var(--mut);
+    border-radius:26px; padding:8px 9px 8px 16px; display:none; align-items:center; gap:12px;
+    font-size:12.5px; z-index:70; box-shadow:0 8px 24px rgba(0,0,0,.55); max-width:92%; white-space:nowrap;
+  }
+  #undotoast.show{display:flex; animation:flashin .2s ease}
+  #undotoast button{
+    background:var(--ink); color:var(--bg); border:none; border-radius:16px; padding:6px 14px;
+    font-size:12.5px; font-weight:700; cursor:pointer; flex:none;
+  }
   .empty{color:var(--faint); font-size:13.5px; text-align:center; padding:28px 10px; line-height:1.6}
 
   /* bodyweight modal-ish */
@@ -427,6 +442,11 @@
   <div id="wslides"></div>
 </div>
 
+<div id="undotoast">
+  <span id="undomsg"></span>
+  <button onclick="undoDelete()">Undo</button>
+</div>
+
 <nav>
   <button class="on" data-tab="today" onclick="switchTab('today',this)">Today</button>
   <button data-tab="history" onclick="switchTab('history',this)">History</button>
@@ -483,7 +503,7 @@ const PRESETS = [
     notes:{plank:'Rest-day core — easy effort, keep the habit alive.'}}
 ];
 
-let state = { sessions:[], weights:[], drafts:{}, customEx:{}, lastPreset:0 };
+let state = { sessions:[], weights:[], drafts:{}, customEx:{}, restDays:{}, lastPreset:0 };
 let selDate = null, weekMon = null, swapIdx = null, qhKey = null, menuIdx = null;
 let saveTimer = null;
 
@@ -494,6 +514,7 @@ async function loadState(){
     if(r) state = Object.assign(state, JSON.parse(r));
   }catch(e){ /* first run, defaults stand */ }
   if(!state.customEx) state.customEx = {};
+  if(!state.restDays) state.restDays = {};
   delete state.protein;
   migrate();
 }
@@ -588,6 +609,7 @@ function renderWeek(){
     const dot = (dr && dr.items && dr.items.length && !ss.length) ? '<span class="dot"></span>' : '';
     const cls = ['plate',
       t ? 'logged '+t : '',
+      (!ss.length && state.restDays[date]) ? 'rest' : '',
       date===selDate ? 'sel' : '',
       date===today ? 'today' : '',
       date>today ? 'future' : ''].filter(Boolean).join(' ');
@@ -664,6 +686,11 @@ function doSwap(sel, i){
   draft().items[i] = newItem(v);
   swapIdx = null; menuIdx = null;
   persist(); renderWorkout();
+}
+function toggleRest(){
+  if(state.restDays[selDate]) delete state.restDays[selDate];
+  else state.restDays[selDate] = 1;
+  persist(); renderWorkout(); renderWeek(); renderStats();
 }
 function itemMenu(i){ menuIdx = (menuIdx===i ? null : i); swapIdx = null; renderWorkout(); }
 function moveItem(i, dir){
@@ -901,12 +928,23 @@ function renderWorkout(){
   ss.forEach(s=>{ if(!d || d.editId !== s.id) html += sessionCard(s); });
 
   if(!items.length && !ss.length){
-    const nx = PRESETS[(state.lastPreset||0) % 7];
-    html += `<div class="card">
-      <h3><span class="bar ${nx.type==='walk'?'run':nx.type}"></span>Next up: ${nx.label}<span class="target">day ${nx.id}</span></h3>
-      <div class="note">Load it and swap or drop anything — or build the day from scratch below.</div>
-      <div class="exbtns"><button class="mini" onclick="loadPreset(${nx.id})">Load ${nx.label}</button></div>
-    </div>`;
+    if(state.restDays[selDate]){
+      html += `<div class="card">
+        <h3><span class="bar run"></span>Rest day<span class="target">😴</span></h3>
+        <div class="note">Marked as rest — this is where the growing happens. The streak stays safe. Change of plans? Build a workout below and it un-marks itself.</div>
+        <div class="exbtns"><button class="mini" onclick="toggleRest()">unmark rest</button></div>
+      </div>`;
+    } else {
+      const nx = PRESETS[(state.lastPreset||0) % 7];
+      html += `<div class="card">
+        <h3><span class="bar ${nx.type==='walk'?'run':nx.type}"></span>Next up: ${nx.label}<span class="target">day ${nx.id}</span></h3>
+        <div class="note">Load it and swap or drop anything — or build the day from scratch below.</div>
+        <div class="exbtns">
+          <button class="mini" onclick="loadPreset(${nx.id})">Load ${nx.label}</button>
+          <button class="mini" onclick="toggleRest()">rest day</button>
+        </div>
+      </div>`;
+    }
   }
 
   html += items.map((it,i)=>itemCard(it,i)).join('');
@@ -997,6 +1035,7 @@ function finishDay(){
   const label = d.preset ? d.preset.label : 'Custom';
   const type = d.preset ? d.preset.type : inferType(d);
 
+  delete state.restDays[selDate];
   if(d.editId){
     const s = state.sessions.find(x=>x.id===d.editId);
     if(s) Object.assign(s, {entries, run, walk, swim, bike, note:d.note||'', label, type, order});
@@ -1089,8 +1128,16 @@ function renderStats(){
   const thisWeek = week.filter(d=>dates.has(d)).length;
   let streak = 0;
   const day = new Date();
-  if(!dates.has(day.toISOString().slice(0,10))) day.setDate(day.getDate()-1);
-  while(dates.has(day.toISOString().slice(0,10))){ streak++; day.setDate(day.getDate()-1); }
+  {
+    const t0 = day.toISOString().slice(0,10);
+    if(!dates.has(t0) && !state.restDays[t0]) day.setDate(day.getDate()-1);
+  }
+  for(;;){
+    const dISO = day.toISOString().slice(0,10);
+    if(dates.has(dISO)){ streak++; day.setDate(day.getDate()-1); }
+    else if(state.restDays[dISO]){ day.setDate(day.getDate()-1); }  // rest freezes, doesn't count
+    else break;
+  }
   const vol = draftVolume();
   el.innerHTML = `
     <div class="stat"><div class="v">${thisWeek}<span style="color:var(--faint)">/7</span></div><div class="l">this week</div></div>
@@ -1256,14 +1303,32 @@ function delCustom(btn){
   delete state.customEx[btn.dataset.k];
   persist(); renderCustoms();
 }
+let lastDeleted = null, undoTimer = null;
 function delSession(btn){
   if(!btn.classList.contains('arm')){
     btn.classList.add('arm'); btn.textContent='delete?';
     setTimeout(()=>{ btn.classList.remove('arm'); btn.textContent='×'; }, 2500);
     return;
   }
-  state.sessions = state.sessions.filter(s=>s.id != btn.dataset.id);
+  const s = state.sessions.find(x=>x.id == btn.dataset.id);
+  state.sessions = state.sessions.filter(x=>x.id != btn.dataset.id);
   persist(); renderHistory(); renderProgressOptions(); renderProgress(); renderWeek();
+  if(!s) return;
+  lastDeleted = s;
+  document.getElementById('undomsg').textContent = `Deleted ${s.label||'workout'} · ${fmtDate(s.date)}`;
+  const toast = document.getElementById('undotoast');
+  toast.classList.add('show');
+  clearTimeout(undoTimer);
+  undoTimer = setTimeout(()=>{ toast.classList.remove('show'); lastDeleted = null; }, 6000);
+}
+function undoDelete(){
+  if(!lastDeleted) return;
+  state.sessions.push(lastDeleted);
+  state.sessions.sort((a,b)=> a.date<b.date ? -1 : a.date>b.date ? 1 : a.id-b.id);
+  lastDeleted = null;
+  clearTimeout(undoTimer);
+  document.getElementById('undotoast').classList.remove('show');
+  persist(); renderHistory(); renderProgressOptions(); renderProgress(); renderWeek(); renderStats();
 }
 
 /* ---------- progress ---------- */
@@ -1329,6 +1394,7 @@ function renderHeatmap(){
       const ss = sessionsOn(date);
       const cls = ['hsq',
         ss.length ? typeOf(ss[ss.length-1]) : '',
+        (!ss.length && state.restDays[date]) ? 'rest' : '',
         date===today ? 'today' : '',
         date>today ? 'future' : ''].filter(Boolean).join(' ');
       col += `<div class="${cls}"></div>`;
@@ -1479,6 +1545,21 @@ function openWrapped(mode){
     }
     const top = Object.keys(st.byEx).sort((a,b)=>st.byEx[b]-st.byEx[a])[0];
     if(top) slide(st.byEx[top], `sessions of ${exName(top)}`, 'your ride-or-die this period \u{1F91D}', 'var(--core)');
+    // finish-time habits, derived from when each session was saved
+    const ss2 = state.sessions.filter(s=>s.date>=from && s.date<=to);
+    const hrs = ss2.map(s=>new Date(s.id).getHours()).filter(h=>h>=0 && h<=23);
+    if(hrs.length >= 3){
+      const counts = {};
+      hrs.forEach(h=>counts[h] = (counts[h]||0)+1);
+      const peak = +Object.keys(counts).sort((a,b)=>counts[b]-counts[a])[0];
+      const fmtH = h => (h%12||12) + (h<12?'am':'pm');
+      const eve = Math.round(hrs.filter(h=>h>=17).length/hrs.length*100);
+      const morn = Math.round(hrs.filter(h=>h<10).length/hrs.length*100);
+      const fun = eve >= 50 ? `${eve}% of your sessions wrap up after 5pm — night forger \u{1F319}` :
+        morn >= 50 ? `${morn}% done before 10am — dawn patrol \u{1F305}` :
+        'scattered all over the clock — chaos athlete \u{1F3B2}';
+      slide(fmtH(peak).toUpperCase(), 'your usual finish time', fun, 'var(--run)');
+    }
     if(st.pr) slide('+'+Math.round(st.pr.gain), `lb on your ${exName(st.pr.k)} e1RM`,
       `now sitting at ${Math.round(st.pr.e)} — biggest jump of the period \u{1F4C8}`, 'var(--legs)');
     if(st.bwFrom !== null && st.bwTo !== null && st.bwFrom !== st.bwTo)
@@ -1840,8 +1921,9 @@ function importData(input){
     try{
       const parsed = JSON.parse(rd.result);
       if(!parsed.sessions) throw new Error('bad file');
-      state = Object.assign({sessions:[],weights:[],drafts:{},customEx:{},lastPreset:0}, parsed);
+      state = Object.assign({sessions:[],weights:[],drafts:{},customEx:{},restDays:{},lastPreset:0}, parsed);
       if(!state.customEx) state.customEx = {};
+      if(!state.restDays) state.restDays = {};
       delete state.protein;
       migrate();
       persist(); renderBw(); renderHistory(); renderWeek(); renderWorkout();
