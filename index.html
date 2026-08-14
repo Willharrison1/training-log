@@ -56,6 +56,22 @@
   .bw-chip:active{transform:scale(.96)}
   .bw-chip .v{font-family:var(--mono); font-size:16px; font-weight:600}
   .bw-chip .l{font-size:10px; color:var(--mut); text-transform:uppercase; letter-spacing:.08em}
+  .chipcol{display:flex; gap:6px}
+  .chipcol .bw-chip{padding:6px 10px; min-width:64px; text-align:center}
+
+  /* session bar */
+  .sessbar{
+    display:flex; align-items:center; gap:10px; margin-bottom:12px; padding:8px 8px 8px 14px;
+    background:var(--grad-card); border:1px solid var(--edge); border-radius:12px; box-shadow:var(--shadow-card);
+  }
+  .sessbar .sl{font-size:10px; letter-spacing:.09em; text-transform:uppercase; color:var(--faint)}
+  .sessbar .sv{font-family:var(--mono); font-size:15px; font-weight:600; flex:1}
+  .sessbar .sv.paused{color:var(--legs)}
+
+  /* stretch routine */
+  .stx{font-family:var(--mono); font-size:12px; color:var(--mut); line-height:1.9; margin-top:8px}
+  .stx b{color:var(--ink); font-family:var(--body); font-weight:600; font-size:11px; text-transform:uppercase; letter-spacing:.07em}
+  .mini.on{background:var(--run); border-color:var(--run); color:#fff}
   /* exercise quick history */
   .exname{cursor:pointer; border-bottom:1px dotted var(--faint)}
   .qhist{margin-top:9px; border-top:1px solid var(--line); padding-top:7px}
@@ -361,9 +377,15 @@
     <h1>Training Log</h1>
     <div class="sub" id="todaydate"></div>
   </div>
-  <div class="bw-chip" id="bwchip" onclick="toggleBw()">
-    <div class="v" id="bwval">--</div>
-    <div class="l">lbs &middot; tap to log</div>
+  <div class="chipcol">
+    <div class="bw-chip" id="bwchip" onclick="toggleBw()">
+      <div class="v" id="bwval">--</div>
+      <div class="l">lbs</div>
+    </div>
+    <div class="bw-chip" id="tmrchip" onclick="timerTap()">
+      <div class="v" id="tmrval">0:00</div>
+      <div class="l">timer</div>
+    </div>
   </div>
 </header>
 
@@ -475,49 +497,61 @@ const EXLIB = {
   shrug:{name:'Shrugs (DB or BB)',             tag:'pull', sets:3, reps:'10–15', repMax:15},
   sarow:{name:'Single-arm DB row',             tag:'pull', sets:3, reps:'8–12',  repMax:12},
   sapd: {name:'Straight-arm pulldown',         tag:'pull', sets:3, reps:'12–15', repMax:15},
+  bbcurl:{name:'Barbell curls',                tag:'pull', sets:3, reps:'8–12',  repMax:12},
   split:{name:'Split squats (per leg)',        tag:'legs', sets:2, reps:'10–12', repMax:12},
   ham:  {name:'Hamstring curls',               tag:'legs', sets:2, reps:'10–15', repMax:15},
   ext:  {name:'Leg extensions',                tag:'legs', sets:2, reps:'10–15', repMax:15},
   rdl:  {name:'Romanian deadlift',             tag:'legs', sets:3, reps:'8–12',  repMax:12},
   calf: {name:'Calf raises',                   tag:'legs', sets:3, reps:'12–15', repMax:15},
+  legpress:{name:'Leg press',                  tag:'legs', sets:3, reps:'8–12',  repMax:12},
+  goblet:{name:'Goblet squat (DB)',            tag:'legs', sets:3, reps:'10–15', repMax:15},
+  stepup:{name:'DB step-ups (per leg)',        tag:'legs', sets:3, reps:'10–12', repMax:12},
+  lunge:{name:'DB walking lunges (per leg)',   tag:'legs', sets:3, reps:'10–12', repMax:12},
   plank:{name:'Plank (log seconds as reps)',   tag:'core', sets:3, reps:'30–60s', repMax:999},
   legraise:{name:'Hanging leg raises',         tag:'core', sets:3, reps:'10–15', repMax:15},
   crunch:{name:'Cable crunch / crunches',      tag:'core', sets:3, reps:'12–20', repMax:20},
   twist:{name:'Russian twists (per side)',     tag:'core', sets:3, reps:'12–20', repMax:20},
+  backext:{name:'Back extensions',             tag:'core', sets:3, reps:'12–15', repMax:15},
+  abwheel:{name:'Ab wheel rollouts',           tag:'core', sets:3, reps:'8–12',  repMax:12},
 };
 const EXNAMES = {bench:'Bench (free)', smith:'Bench (smith)', ohp:'Shoulder press', fly:'Chest fly', tri:'Triceps',
   dip:'Dips', latr:'Lateral raises', idb:'Incline DB press', cgb:'Close-grip bench',
   row:'Rows', lat:'Lat pulldown', curl:'Bicep curls', rdf:'Rear delt fly',
-  pullup:'Pull-ups', shrug:'Shrugs', sarow:'1-arm DB row', sapd:'Straight-arm pulldown',
+  pullup:'Pull-ups', shrug:'Shrugs', sarow:'1-arm DB row', sapd:'Straight-arm pulldown', bbcurl:'Barbell curls',
   split:'Split squats', ham:'Hamstring curls', ext:'Leg extensions',
-  rdl:'Romanian DL', calf:'Calf raises', plank:'Plank', legraise:'Leg raises', crunch:'Crunches', twist:'Russian twists'};
+  rdl:'Romanian DL', calf:'Calf raises', legpress:'Leg press', goblet:'Goblet squat',
+  stepup:'Step-ups', lunge:'Lunges', plank:'Plank', legraise:'Leg raises', crunch:'Crunches',
+  twist:'Russian twists', backext:'Back extensions', abwheel:'Ab wheel'};
 
 /* ---------- presets (the old Day 1-7 program) ---------- */
 const PRESETS = [
-  {id:1, label:'Push + Legs', type:'push', items:['bench','ohp','fly','tri','__run','split','latr','plank','crunch'],
+  {id:1, label:'Push + Legs', type:'push', items:['bench','ohp','fly','tri','__run','split','latr','plank','crunch','__stretch'],
     notes:{split:'After the run. Lighter DBs than fresh, 1–2 reps in reserve, hold a rail if shaky.',
       latr:'Finisher: go light, 15–20 reps, chase the burn not the number.',
       crunch:'Second core slot — slow reps, squeeze hard.'}},
-  {id:2, label:'Pull + Legs', type:'pull', items:['row','lat','curl','rdf','__run','ham','shrug','legraise'],
+  {id:2, label:'Pull + Legs', type:'pull', items:['row','lat','curl','rdf','__run','ham','shrug','backext','legraise','__stretch'],
     notes:{ham:'Machine — safe to push to failure after the run.',
-      shrug:'Finisher: squeeze 2 seconds at the top of every rep.'}},
-  {id:3, label:'Push Volume', type:'push', items:['bench','ohp','idb','fly','tri','__run','calf','latr','twist'],
+      shrug:'Finisher: squeeze 2 seconds at the top of every rep.',
+      backext:'Lower back + glutes — controlled and smooth, no jerking.'}},
+  {id:3, label:'Push Volume', type:'push', items:['bench','ohp','idb','fly','tri','__run','calf','latr','twist','__stretch'],
     notes:{bench:'Swap incline/flat from your last push day.',
       idb:'If bench was incline today, go flat DBs here — and vice versa.',
       calf:'Only leg work today — slow negatives, full stretch at the bottom.',
       latr:'Finisher: light, 15–20 reps, arms still have gas after the run.'}},
-  {id:4, label:'Pull + Legs', type:'pull', items:['row','lat','sarow','curl','rdf','__run','ext','crunch'],
+  {id:4, label:'Pull + Legs', type:'pull', items:['row','lat','sarow','curl','rdf','__run','ext','abwheel','crunch','__stretch'],
     notes:{sarow:'Pull-up stand-in for now — go heavy, brace on the bench.',
-      ext:'Machine — safe to push to failure after the run.'}},
-  {id:5, label:'Push + Legs', type:'push', items:['bench','ohp','cgb','tri','__run','split','legraise','twist'],
+      ext:'Machine — safe to push to failure after the run.',
+      abwheel:'From the knees, brace hard before you roll — short range until it owns you.'}},
+  {id:5, label:'Push + Legs', type:'push', items:['bench','ohp','cgb','tri','__run','split','bbcurl','legraise','twist','__stretch'],
     notes:{cgb:'Dip stand-in — narrow grip, elbows tucked, chest and triceps together.',
       split:'After the run. Lighter DBs than fresh, 1–2 reps in reserve.',
+      bbcurl:'Post-run arm bonus on a push day — strict form, zero swinging.',
       twist:'Second core slot — slow and controlled.'}},
-  {id:6, label:'Pull Volume', type:'pull', items:['row','lat','sapd','curl','rdf','__run','calf','shrug','twist'],
+  {id:6, label:'Pull Volume', type:'pull', items:['row','lat','sapd','curl','rdf','__run','calf','shrug','twist','__stretch'],
     notes:{sapd:'Pull-up stand-in — lats only, no bicep takeover, feel the stretch.',
       calf:'Only leg work today — slow negatives, full stretch.',
       shrug:'Finisher: squeeze at the top, let the traps grow.'}},
-  {id:7, label:'Walk day', type:'walk', items:['__walk','plank','twist'],
+  {id:7, label:'Walk day', type:'walk', items:['__walk','plank','twist','__stretch'],
     notes:{plank:'Rest-day core — easy effort, keep the habit alive.',
       twist:'Slow and controlled — this is recovery, not a workout.'}}
 ];
@@ -611,7 +645,67 @@ function draft(){
   if(!state.drafts[selDate]) state.drafts[selDate] = { items:[], note:'' };
   return state.drafts[selDate];
 }
-function stamp(){ const d = draft(); if(!d.startedAt) d.startedAt = Date.now(); }
+/* ---------- header stopwatch (wake-locked) ---------- */
+let tmrState = 'idle', tmrStart = 0, tmrInt = null, wakeLock = null;
+function fmtT(ms){
+  const s = Math.floor(ms/1000);
+  return Math.floor(s/60) + ':' + String(s%60).padStart(2,'0');
+}
+async function tmrLock(){
+  try{ if('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen'); }catch(e){}
+}
+function tmrUnlock(){
+  try{ if(wakeLock){ wakeLock.release(); wakeLock = null; } }catch(e){}
+}
+function timerTap(){
+  const v = document.getElementById('tmrval');
+  if(tmrState === 'idle'){
+    tmrState = 'run'; tmrStart = Date.now();
+    v.style.color = 'var(--run)';
+    tmrInt = setInterval(()=>{ v.textContent = fmtT(Date.now()-tmrStart); }, 250);
+    tmrLock();
+  } else if(tmrState === 'run'){
+    tmrState = 'stop'; clearInterval(tmrInt);
+    v.textContent = fmtT(Date.now()-tmrStart);
+    v.style.color = 'var(--legs)';
+    tmrUnlock();
+  } else {
+    tmrState = 'idle';
+    v.textContent = '0:00'; v.style.color = '';
+  }
+}
+document.addEventListener('visibilitychange', ()=>{
+  if(document.visibilityState === 'visible' && tmrState === 'run') tmrLock();
+});
+
+/* ---------- session clock (start / pause / resume) ---------- */
+function sessElapsed(d){
+  if(!d || !d.startedAt) return 0;
+  const paused = (d.pausedMs||0) + (d.pausedAt ? Date.now()-d.pausedAt : 0);
+  return Math.max(0, Date.now() - d.startedAt - paused);
+}
+function sessStart(){
+  const d = draft();
+  if(!d.startedAt) d.startedAt = Date.now();
+  persist(); renderWorkout();
+}
+function sessPause(){ draft().pausedAt = Date.now(); persist(); renderWorkout(); }
+function sessResume(){
+  const d = draft();
+  d.pausedMs = (d.pausedMs||0) + (Date.now() - d.pausedAt);
+  delete d.pausedAt;
+  persist(); renderWorkout();
+}
+function sessBar(d){
+  const paused = !!d.pausedAt;
+  return `<div class="sessbar">
+    <span class="sl">session</span>
+    <span class="sv ${paused?'paused':''}" id="sessval">${d.startedAt ? fmtT(sessElapsed(d)) + (paused?' ⏸':'') : '–:––'}</span>
+    ${!d.startedAt ? `<button class="mini" onclick="sessStart()">▶ start now</button>` :
+      paused ? `<button class="mini" onclick="sessResume()">▶ resume</button>` :
+      `<button class="mini" onclick="sessPause()">⏸ pause</button>`}
+  </div>`;
+}
 
 /* ---------- calendar week strip ---------- */
 function renderWeek(){
@@ -647,6 +741,7 @@ function newItem(k, note){
   if(k === '__walk') return {k:'__walk', min:'', mi:''};
   if(k === '__swim') return {k:'__swim', min:'', yd:''};
   if(k === '__bike') return {k:'__bike', min:'', mi:''};
+  if(k === '__stretch') return {k:'__stretch', done:false};
   const inf = exInfo(k) || {sets:3};
   const it = {k, sets:Array.from({length:inf.sets||3}, ()=>({w:'',r:'',done:false}))};
   if(note) it.note = note;
@@ -661,12 +756,12 @@ function exOptions(){
       ks.map(k=>`<option value="${k}">${exName(k)}</option>`).join('') + '</optgroup>';
   });
   h += '<optgroup label="CARDIO"><option value="__run">Run</option><option value="__walk">Walk</option><option value="__swim">Swim</option><option value="__bike">Bike</option></optgroup>';
+  h += '<optgroup label="RECOVERY"><option value="__stretch">Stretch routine</option></optgroup>';
   return h;
 }
 function presetSel(sel){ const v = +sel.value; sel.value=''; if(v) loadPreset(v); }
 function loadPreset(id){
   const p = PRESETS[id-1]; if(!p) return;
-  stamp();
   const d = draft();
   p.items.forEach(k=>d.items.push(newItem(k, p.notes[k])));
   d.preset = {id:p.id, label:p.label, type:p.type};
@@ -679,7 +774,6 @@ function addSel(sel){
   if(v) addItem(v);
 }
 function addItem(k){
-  stamp();
   draft().items.push(newItem(k));
   persist(); renderWorkout(); renderWeek();
 }
@@ -748,11 +842,43 @@ function qhistHTML(k){
     return `<div class="qrow"><span class="qd">${fmtDate(s.date)}</span><span class="qs">${sets}</span>${e ? `<span class="qe">e1RM ${Math.round(e)}</span>` : ''}</div>`;
   }).join('') + '</div>';
 }
+function stretchCard(it, i){
+  const swapSel = swapIdx===i ?
+    `<select onchange="doSwap(this,${i})" style="margin-top:10px">
+      <option value="">Swap to…</option>${exOptions()}</select>` : '';
+  return `<div class="card">
+    <h3><span class="bar run"></span>Stretch routine<span class="target">~8 min</span>
+      ${itemCtl(i)}</h3>
+    ${itemMenuRow(i)}
+    ${swapSel}
+    <div class="stx">
+      <b>Hamstrings &amp; lower</b><br>
+      Standing forward fold — 45s<br>
+      Seated single-leg reach — 45s / side<br>
+      Figure-4 glute stretch — 30s / side<br>
+      Standing calf stretch — 30s / side<br>
+      <b>Arms &amp; upper</b><br>
+      Cross-body shoulder — 30s / arm<br>
+      Overhead triceps — 30s / arm<br>
+      Doorway chest stretch — 45s<br>
+      Wrist-flexor pull-backs — 30s / arm
+    </div>
+    <div class="note">Use the header timer for holds. Stretch to tension, never pain — exhale into it.</div>
+    <div class="exbtns"><button class="mini ${it.done?'on':''}" onclick="stretchDone(${i},this)">✓ done stretching</button></div>
+  </div>`;
+}
+function stretchDone(i, btn){
+  const it = draft().items[i];
+  it.done = !it.done;
+  btn.classList.toggle('on', it.done);
+  persist();
+}
 function itemCard(it, i){
   if(it.k === '__run')  return runCard(it, i);
   if(it.k === '__walk') return walkCard(it, i);
   if(it.k === '__swim') return swimCard(it, i);
   if(it.k === '__bike') return bikeCard(it, i);
+  if(it.k === '__stretch') return stretchCard(it, i);
   const inf = exInfo(it.k) || {tag:'push', reps:'', repMax:99};
   const last = lastSetsFor(it.k);
   const lastTxt = last ? 'Last: ' + last.filter(s=>s.w||s.r).map(s=>`${s.w||'?'}×${s.r||'?'}`).join(', ') : '';
@@ -888,6 +1014,7 @@ function sessionLines(s){
   if(s.walk && (s.walk.min||s.walk.mi)) parts.push(`Walk ${s.walk.min||'?'} min${s.walk.mi ? ' · '+s.walk.mi+' mi' : ''}`);
   if(s.swim && (s.swim.min||s.swim.yd)) parts.push(`Swim ${s.swim.min||'?'} min${s.swim.yd ? ' · '+s.swim.yd+' yd' : ''}`);
   if(s.bike && (s.bike.min||s.bike.mi)) parts.push(`Bike ${s.bike.min||'?'} min${s.bike.mi ? ' · '+s.bike.mi+' mi' : ''}`);
+  if(s.stretch) parts.push('Stretched ✓');
   return parts;
 }
 function sessionCard(s){
@@ -966,6 +1093,7 @@ function renderWorkout(){
     }
   }
 
+  if(items.length && !d.editId) html += sessBar(d);
   html += items.map((it,i)=>itemCard(it,i)).join('');
   html += builderCard();
 
@@ -997,9 +1125,9 @@ function renderWorkout(){
 }
 
 /* input handlers */
-function setVal(i,j,f,v){ stamp(); draft().items[i].sets[j][f]=v; persist(); renderStats(); }
+function setVal(i,j,f,v){ draft().items[i].sets[j][f]=v; persist(); renderStats(); }
 function cardioVal(i,f,v){
-  stamp(); const it = draft().items[i]; it[f]=v; persist();
+  const it = draft().items[i]; it[f]=v; persist();
   const p = document.getElementById('pace'+i); if(p) p.textContent = paceStr(it);
   const m = document.getElementById('mph'+i); if(m) m.textContent = mphStr(it);
 }
@@ -1013,12 +1141,31 @@ function fillLast(i){
   persist(); renderWorkout();
 }
 function doneSet(i,j,btn){
-  stamp();
-  const s = draft().items[i].sets[j];
+  const d = draft();
+  const sets = d.items[i].sets;
+  const s = sets[j];
   s.done = !s.done;
-  persist();
+  // one-tap repeat: checking an empty set adopts the set above,
+  // or last session's same-set ghost for the first row
+  if(s.done && !s.w && !s.r){
+    let src = null;
+    if(j > 0 && (sets[j-1].w || sets[j-1].r)) src = sets[j-1];
+    else{
+      const last = lastSetsFor(d.items[i].k);
+      if(last && last[j] && (last[j].w || last[j].r)) src = last[j];
+    }
+    if(src){
+      s.w = src.w || ''; s.r = src.r || '';
+      const inputs = btn.closest('.setrow').querySelectorAll('input');
+      inputs[0].value = s.w; inputs[1].value = s.r;
+      renderStats();
+    }
+  }
   btn.classList.toggle('on', s.done);
   btn.closest('.setrow').classList.toggle('done', s.done);
+  const firstStart = s.done && !d.startedAt;
+  persist();
+  if(firstStart){ d.startedAt = Date.now(); persist(); renderWorkout(); }
 }
 
 /* ---------- finish / edit ---------- */
@@ -1026,7 +1173,7 @@ function finishDay(){
   const d = state.drafts[selDate];
   if(!d || !d.items.length) return;
   const entries = {}; const order = [];
-  let run = null, walk = null, swim = null, bike = null;
+  let run = null, walk = null, swim = null, bike = null, stretch = false;
   d.items.forEach(it=>{
     if(it.k === '__run'){
       if(it.min||it.sec||it.mi){ run = {min:it.min, sec:it.sec, mi:it.mi}; order.push('__run'); }
@@ -1042,6 +1189,10 @@ function finishDay(){
     }
     if(it.k === '__bike'){
       if(it.min||it.mi){ bike = {min:it.min, mi:it.mi}; order.push('__bike'); }
+      return;
+    }
+    if(it.k === '__stretch'){
+      if(it.done){ stretch = true; order.push('__stretch'); }
       return;
     }
     const filled = it.sets.filter(s=>s.w||s.r);
@@ -1060,7 +1211,7 @@ function finishDay(){
   delete state.restDays[selDate];
   if(d.editId){
     const s = state.sessions.find(x=>x.id===d.editId);
-    if(s) Object.assign(s, {entries, run, walk, swim, bike, note:d.note||'', label, type, order});
+    if(s) Object.assign(s, {entries, run, walk, swim, bike, stretch, note:d.note||'', label, type, order});
     delete state.drafts[selDate];
     persist();
     renderWeek(); renderWorkout(); renderStats();
@@ -1068,9 +1219,13 @@ function finishDay(){
   }
 
   const id = Date.now();
-  const dur = d.startedAt ? Math.max(1, Math.round((Date.now() - d.startedAt)/60000)) : null;
+  let dur = null;
+  if(d.startedAt){
+    const pausedMs = (d.pausedMs||0) + (d.pausedAt ? Date.now()-d.pausedAt : 0);
+    dur = Math.max(1, Math.round((Date.now() - d.startedAt - pausedMs)/60000));
+  }
   const preMiles = milestonesAchieved();
-  state.sessions.push({id, date:selDate, label, type, entries, run, walk, swim, bike, note:d.note||'', dur, order});
+  state.sessions.push({id, date:selDate, label, type, entries, run, walk, swim, bike, stretch, note:d.note||'', dur, order});
   state.sessions.sort((a,b)=> a.date<b.date ? -1 : a.date>b.date ? 1 : a.id-b.id);
   const prs = detectPRs(entries, id);
   const newMiles = milestonesAchieved().filter(m=>!preMiles.includes(m));
@@ -1094,6 +1249,7 @@ function editSession(id){
     if(k === '__walk'){ if(s.walk) items.push({k:'__walk', min:s.walk.min||'', mi:s.walk.mi||''}); return; }
     if(k === '__swim'){ if(s.swim) items.push({k:'__swim', min:s.swim.min||'', yd:s.swim.yd||''}); return; }
     if(k === '__bike'){ if(s.bike) items.push({k:'__bike', min:s.bike.min||'', mi:s.bike.mi||''}); return; }
+    if(k === '__stretch'){ if(s.stretch) items.push({k:'__stretch', done:true}); return; }
     if(s.entries && s.entries[k])
       items.push({k, sets:s.entries[k].map(x=>({w:x.w||'', r:x.r||'', done:true}))});
   });
@@ -1967,6 +2123,12 @@ function importData(input){
   selDate = todayISO();
   weekMon = mondayOf(selDate);
   renderWeek(); renderWorkout(); renderBw(); renderStats();
+  setInterval(()=>{
+    const el = document.getElementById('sessval');
+    if(!el) return;
+    const d = state.drafts[selDate];
+    if(d && d.startedAt && !d.pausedAt) el.textContent = fmtT(sessElapsed(d));
+  }, 1000);
 })();
 </script>
 </body>
