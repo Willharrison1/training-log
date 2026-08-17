@@ -510,6 +510,7 @@ const EXLIB = {
   latr: {name:'Lateral raises (DB)',           tag:'push', sets:3, reps:'12–15', repMax:15},
   idb:  {name:'Incline DB press',              tag:'push', sets:3, reps:'8–12',  repMax:12},
   cgb:  {name:'Close-grip bench',              tag:'push', sets:3, reps:'8–12',  repMax:12},
+  sqpress:{name:'DB squeeze press',            tag:'push', sets:3, reps:'8–12',  repMax:12},
   pushup:{name:'Push-ups',                     tag:'push', sets:3, reps:'10–20', repMax:20},
   floorpress:{name:'DB floor press',           tag:'push', sets:4, reps:'8–12',  repMax:12},
   dbbench:{name:'DB bench press',              tag:'push', sets:4, reps:'8–12',  repMax:12},
@@ -545,7 +546,7 @@ const EXLIB = {
   sideplank:{name:'Side plank (sec as reps, per side)', tag:'core', sets:3, reps:'20–40s', repMax:999},
 };
 const EXNAMES = {bench:'Bench (free)', smith:'Bench (smith)', ohp:'Shoulder press', fly:'Chest fly', tri:'Triceps',
-  dip:'Dips', latr:'Lateral raises', idb:'Incline DB press', cgb:'Close-grip bench',
+  dip:'Dips', latr:'Lateral raises', idb:'Incline DB press', cgb:'Close-grip bench', sqpress:'Squeeze press',
   row:'Rows', lat:'Lat pulldown', curl:'Bicep curls', rdf:'Rear delt fly',
   pullup:'Pull-ups', shrug:'Shrugs', sarow:'1-arm DB row', sapd:'Straight-arm pulldown', bbcurl:'Barbell curls',
   csrow:'Chest-supported row', hammer:'Hammer curls',
@@ -575,9 +576,9 @@ const PRESETS = [
       bbcurl:'Strict — elbows pinned to your sides.',
       glutebridge:'Glute project: pause 2s at the top, squeeze like it owes you money. This is what fixes the run pain.',
       abwheel:'From the knees, brace hard before you roll — short range until it owns you.'}},
-  {id:5, label:'Push Pump + Legs', type:'push', items:['bench','cgb','latr','tri','__warmup','__run','goblet','legraise','twist','__stretch'],
-    notes:{cgb:'Dip stand-in — narrow grip, elbows tucked, chest and triceps together.',
-      latr:'In the main block today — a touch heavier than finisher days.',
+  {id:5, label:'Push Pump + Legs', type:'push', items:['bench','latr','sqpress','tri','__warmup','__run','goblet','legraise','twist','__stretch'],
+    notes:{latr:'Buffer between the presses — shoulders burn while the chest recharges.',
+      sqpress:'Dip stand-in, safe to fail — press the DBs into each other hard the whole rep. Chest and triceps, no bar to get pinned under.',
       goblet:'Alternate weeks with split squats. Upright torso — easy on the lower back.',
       twist:'Second core slot — slow and controlled.'}},
   {id:6, label:'Pull Pump', type:'pull', items:['csrow','sapd','hammer','shrug','rdf','__warmup','__run','sldl','sideplank','__stretch'],
@@ -1244,6 +1245,7 @@ function renderWorkout(){
       <b>Lower back:</b> rows stay chest-supported, hinges stay light and smooth, core stays anti-extension. Build it, don't test it.<br>
       <b>Finishers</b> are pump work — light, 15–20 reps, chase blood not PRs.<br>
       <b>Machines</b> can go to failure; split squats stay 1–2 reps short.<br>
+      <b>Free bar:</b> never to absolute failure without a spotter — 1–2 in reserve, and set the rack safeties when in doubt.<br>
       <b>Runs</b> conversational pace, one harder push-day run per week.<br>
       <b>Fuel:</b> shake · cold-cut lunch · shake · dinner — ~2,000–2,200 cal, 135–155g protein. Never under ~1,900 on a training day.<br>
       <b>Cut rule:</b> trend −0.5 to −0.75 lb/wk while the yellow lines keep firing. Lifts stall 2 wks → add 200 cal. Trend flat 3 wks → trim a dip or the cheese.<br>
