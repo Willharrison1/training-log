@@ -116,7 +116,8 @@
   .plate.sel.logged.legs,.plate.sel.logged.custom{background:var(--legs); border-color:var(--legs); box-shadow:0 6px 16px -7px rgba(229,185,63,.6)}
   .plate.sel.logged.core{background:var(--core); border-color:var(--core); box-shadow:0 6px 16px -7px rgba(160,108,232,.6)}
   .plate.sel.logged .n,.plate.sel.logged .t{color:#fff}
-  .plate.today{box-shadow:0 0 0 2px var(--bg), 0 0 0 4px var(--mut), 0 4px 10px -6px rgba(0,0,0,.55)}
+  .plate.today{box-shadow:0 0 0 2px var(--bg), 0 0 0 4px var(--run), 0 4px 14px -4px rgba(76,184,113,.45)}
+  .plate.today .t{color:var(--run); font-weight:700}
   .plate .dot{position:absolute; bottom:-3px; right:-1px; width:11px; height:11px; border-radius:50%;
     background:var(--legs); border:2px solid var(--bg)}
 
@@ -174,6 +175,12 @@
   .today.up{color:var(--legs); font-weight:600}
   .today.hold{color:var(--mut)}
   .today.new{color:var(--faint)}
+
+  /* collapsed completed exercise */
+  .ccard{display:flex; align-items:center; gap:9px; padding:11px 14px; cursor:pointer}
+  .ccard .cname{font-family:var(--disp); font-size:15.5px; font-weight:600; letter-spacing:.02em; flex:none}
+  .ccard .csets{font-family:var(--mono); font-size:11px; color:var(--mut); flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .ccard .cchk{color:var(--run); font-weight:700; flex:none}
 
   .sets{margin-top:10px; display:flex; flex-direction:column; gap:8px}
   .setrow{display:flex; align-items:center; gap:8px}
@@ -433,7 +440,7 @@
 </div>
 
 <div class="tab" id="tab-progress">
-  <div class="seccap" id="recapcap" style="display:none">This week vs last</div>
+  <div class="seccap" id="recapcap" style="display:none">This week vs same point last week</div>
   <div class="stats" id="recap" style="display:none"></div>
   <div class="seccap">Lifetime</div>
   <div class="stats" id="bignums"></div>
@@ -493,6 +500,7 @@ const EXLIB = {
   latr: {name:'Lateral raises (DB)',           tag:'push', sets:3, reps:'12–15', repMax:15},
   idb:  {name:'Incline DB press',              tag:'push', sets:3, reps:'8–12',  repMax:12},
   cgb:  {name:'Close-grip bench',              tag:'push', sets:3, reps:'8–12',  repMax:12},
+  pushup:{name:'Push-ups',                     tag:'push', sets:3, reps:'10–20', repMax:20},
   row:  {name:'Rows (barbell or cable)',       tag:'pull', sets:4, reps:'6–10',  repMax:10},
   lat:  {name:'Lat pulldown',                  tag:'pull', sets:3, reps:'8–12',  repMax:12},
   curl: {name:'Bicep curls',                   tag:'pull', sets:3, reps:'10–15', repMax:15},
@@ -511,12 +519,16 @@ const EXLIB = {
   goblet:{name:'Goblet squat (DB)',            tag:'legs', sets:3, reps:'10–15', repMax:15},
   stepup:{name:'DB step-ups (per leg)',        tag:'legs', sets:3, reps:'10–12', repMax:12},
   lunge:{name:'DB walking lunges (per leg)',   tag:'legs', sets:3, reps:'10–12', repMax:12},
+  kbswing:{name:'KB swings (two-hand)',        tag:'legs', sets:3, reps:'15–20', repMax:20},
+  glutebridge:{name:'Glute bridge / hip thrust', tag:'legs', sets:3, reps:'12–15', repMax:15},
+  sldl: {name:'Single-leg RDL (DB, per leg)',  tag:'legs', sets:3, reps:'8–10',  repMax:10},
   plank:{name:'Plank (log seconds as reps)',   tag:'core', sets:3, reps:'30–60s', repMax:999},
   legraise:{name:'Hanging leg raises',         tag:'core', sets:3, reps:'10–15', repMax:15},
   crunch:{name:'Cable crunch / crunches',      tag:'core', sets:3, reps:'12–20', repMax:20},
   twist:{name:'Russian twists (per side)',     tag:'core', sets:3, reps:'12–20', repMax:20},
   backext:{name:'Back extensions',             tag:'core', sets:3, reps:'12–15', repMax:15},
   abwheel:{name:'Ab wheel rollouts',           tag:'core', sets:3, reps:'8–12',  repMax:12},
+  sideplank:{name:'Side plank (sec as reps, per side)', tag:'core', sets:3, reps:'20–40s', repMax:999},
 };
 const EXNAMES = {bench:'Bench (free)', smith:'Bench (smith)', ohp:'Shoulder press', fly:'Chest fly', tri:'Triceps',
   dip:'Dips', latr:'Lateral raises', idb:'Incline DB press', cgb:'Close-grip bench',
@@ -524,8 +536,9 @@ const EXNAMES = {bench:'Bench (free)', smith:'Bench (smith)', ohp:'Shoulder pres
   pullup:'Pull-ups', shrug:'Shrugs', sarow:'1-arm DB row', sapd:'Straight-arm pulldown', bbcurl:'Barbell curls',
   split:'Split squats', ham:'Hamstring curls', ext:'Leg extensions',
   rdl:'Romanian DL', calf:'Calf raises', legpress:'Leg press', goblet:'Goblet squat',
-  stepup:'Step-ups', lunge:'Lunges', plank:'Plank', legraise:'Leg raises', crunch:'Crunches',
-  twist:'Russian twists', backext:'Back extensions', abwheel:'Ab wheel'};
+  stepup:'Step-ups', lunge:'Lunges', kbswing:'KB swings', glutebridge:'Glute bridge', sldl:'1-leg RDL',
+  pushup:'Push-ups', plank:'Plank', legraise:'Leg raises', crunch:'Crunches',
+  twist:'Russian twists', backext:'Back extensions', abwheel:'Ab wheel', sideplank:'Side plank'};
 
 /* ---------- presets (the old Day 1-7 program) ---------- */
 const PRESETS = [
@@ -542,22 +555,31 @@ const PRESETS = [
       idb:'If bench was incline today, go flat DBs here — and vice versa.',
       calf:'Only leg work today — slow negatives, full stretch at the bottom.',
       latr:'Finisher: light, 15–20 reps, arms still have gas after the run.'}},
-  {id:4, label:'Pull + Legs', type:'pull', items:['row','lat','sarow','curl','rdf','__run','ext','abwheel','crunch','__stretch'],
+  {id:4, label:'Pull + Legs', type:'pull', items:['row','lat','sarow','curl','rdf','__run','glutebridge','abwheel','crunch','__stretch'],
     notes:{sarow:'Pull-up stand-in for now — go heavy, brace on the bench.',
-      ext:'Machine — safe to push to failure after the run.',
+      glutebridge:'Glute project: pause 2s at the top, squeeze like it owes you money. This is what fixes the run pain.',
       abwheel:'From the knees, brace hard before you roll — short range until it owns you.'}},
   {id:5, label:'Push + Legs', type:'push', items:['bench','ohp','cgb','tri','__run','split','bbcurl','legraise','twist','__stretch'],
     notes:{cgb:'Dip stand-in — narrow grip, elbows tucked, chest and triceps together.',
       split:'After the run. Lighter DBs than fresh, 1–2 reps in reserve.',
       bbcurl:'Post-run arm bonus on a push day — strict form, zero swinging.',
       twist:'Second core slot — slow and controlled.'}},
-  {id:6, label:'Pull Volume', type:'pull', items:['row','lat','sapd','curl','rdf','__run','calf','shrug','twist','__stretch'],
+  {id:6, label:'Pull Volume', type:'pull', items:['row','lat','sapd','curl','rdf','__run','sldl','shrug','sideplank','__stretch'],
     notes:{sapd:'Pull-up stand-in — lats only, no bicep takeover, feel the stretch.',
-      calf:'Only leg work today — slow negatives, full stretch.',
-      shrug:'Finisher: squeeze at the top, let the traps grow.'}},
+      sldl:'Glute + stabilizer project: light DB, slow, wobbling is the exercise working.',
+      shrug:'Finisher: squeeze at the top, let the traps grow.',
+      sideplank:'Stabilizer work — hips stacked, straight line, no sagging.'}},
   {id:7, label:'Walk day', type:'walk', items:['__walk','plank','twist','__stretch'],
     notes:{plank:'Rest-day core — easy effort, keep the habit alive.',
-      twist:'Slow and controlled — this is recovery, not a workout.'}}
+      twist:'Slow and controlled — this is recovery, not a workout.'}},
+  {id:8, label:'Apartment Push/Pull', type:'custom',
+    items:['pushup','ohp','latr','sarow','curl','rdf','tri','__run','kbswing','plank','__stretch'],
+    notes:{pushup:'Elevate your feet once 20 gets easy.',
+      ohp:'DBs or kettlebells overhead — whatever the apartment rack has.',
+      sarow:'Brace on a chair or couch arm.',
+      rdf:'Face pulls on the tricep-pull setup.',
+      tri:'The tricep-pull station.',
+      kbswing:'Glute power for pain-free running — hips snap, arms just hold on. Not a squat, a hinge.'}}
 ];
 
 let state = { sessions:[], weights:[], drafts:{}, customEx:{}, restDays:{}, lastPreset:0 };
@@ -609,7 +631,10 @@ function persist(){
 }
 
 /* ---------- helpers ---------- */
-const todayISO = () => new Date().toISOString().slice(0,10);
+function isoOf(d){
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+const todayISO = () => isoOf(new Date());   // local device time, not UTC
 function addDays(iso, n){
   const d = new Date(iso+'T12:00:00'); d.setDate(d.getDate()+n);
   return d.toISOString().slice(0,10);
@@ -883,6 +908,7 @@ function stretchCard(it, i){
       Standing forward fold — 45s<br>
       Seated single-leg reach — 45s / side<br>
       Figure-4 glute stretch — 30s / side<br>
+      Couch / hip-flexor stretch — 45s / side<br>
       Standing calf stretch — 30s / side<br>
       <b>Arms &amp; upper</b><br>
       Cross-body shoulder — 30s / arm<br>
@@ -906,6 +932,16 @@ function itemCard(it, i){
   if(it.k === '__swim') return swimCard(it, i);
   if(it.k === '__bike') return bikeCard(it, i);
   if(it.k === '__stretch') return stretchCard(it, i);
+  if(it.collapsed){
+    const summary = it.sets.filter(s=>s.w||s.r).map(s=>`${s.w||'–'}×${s.r||'?'}`).join(', ');
+    const inf2 = exInfo(it.k) || {tag:'push'};
+    return `<div class="card ccard" onclick="expandItem(${i})">
+      <span class="bar ${inf2.tag}"></span>
+      <span class="cname">${exName(it.k)}</span>
+      <span class="csets">${summary}</span>
+      <span class="cchk">✓</span>
+    </div>`;
+  }
   const inf = exInfo(it.k) || {tag:'push', reps:'', repMax:99};
   const last = lastSetsFor(it.k);
   const lastTxt = last ? 'Last: ' + last.filter(s=>s.w||s.r).map(s=>`${s.w||'?'}×${s.r||'?'}`).join(', ') : '';
@@ -1058,7 +1094,7 @@ function builderCard(){
   return `<div class="card">
     <div class="srow"><select onchange="presetSel(this)">
       <option value="">Load a preset…</option>
-      ${PRESETS.map(p=>`<option value="${p.id}">Day ${p.id} · ${p.label}</option>`).join('')}
+      ${PRESETS.map(p=>`<option value="${p.id}">${p.id<=7 ? 'Day '+p.id+' · ' : 'Alt · '}${p.label}</option>`).join('')}
     </select></div>
     <div class="srow"><select onchange="addSel(this)">
       <option value="">+ Add exercise…</option>
@@ -1074,8 +1110,22 @@ function builderCard(){
         <button onclick="createCustom()">Add</button>
       </div>
     </div>
+    ${(state.drafts[selDate] && state.drafts[selDate].items.length) ?
+      `<div class="exbtns"><button class="mini" onclick="clearUnfinished()">× clear unfinished</button></div>` : ''}
   </div>`;
 }
+function clearUnfinished(){
+  const d = draft();
+  d.items = d.items.filter(it=>{
+    if(it.k === '__stretch') return it.done;
+    if(!it.sets) return ['min','sec','mi','yd'].some(f=>it[f]);
+    return it.sets.some(s=>s.w||s.r);
+  });
+  if(!d.items.length) delete d.preset;
+  swapIdx = null; menuIdx = null;
+  persist(); renderWorkout(); renderWeek();
+}
+function expandItem(i){ draft().items[i].collapsed = false; renderWorkout(); }
 function inferType(d){
   const counts = {push:0, pull:0, legs:0, core:0};
   let cardioOnly = true;
@@ -1188,8 +1238,11 @@ function doneSet(i,j,btn){
   btn.classList.toggle('on', s.done);
   btn.closest('.setrow').classList.toggle('done', s.done);
   const firstStart = s.done && !d.startedAt;
+  if(firstStart) d.startedAt = Date.now();
+  const allDone = s.done && sets.every(x=>x.done);
+  if(allDone) d.items[i].collapsed = true;
   persist();
-  if(firstStart){ d.startedAt = Date.now(); persist(); renderWorkout(); }
+  if(firstStart || allDone) renderWorkout();
 }
 
 /* ---------- finish / edit ---------- */
@@ -1324,18 +1377,18 @@ function renderStats(){
   const now = new Date(), week = [];
   for(let i=6;i>=0;i--){
     const d = new Date(now); d.setDate(now.getDate()-i);
-    week.push(d.toISOString().slice(0,10));
+    week.push(isoOf(d));
   }
   const dates = new Set(state.sessions.map(s=>s.date));
   const thisWeek = week.filter(d=>dates.has(d)).length;
   let streak = 0;
   const day = new Date();
   {
-    const t0 = day.toISOString().slice(0,10);
+    const t0 = isoOf(day);
     if(!dates.has(t0) && !state.restDays[t0]) day.setDate(day.getDate()-1);
   }
   for(;;){
-    const dISO = day.toISOString().slice(0,10);
+    const dISO = isoOf(day);
     if(dates.has(dISO)){ streak++; day.setDate(day.getDate()-1); }
     else if(state.restDays[dISO]){ day.setDate(day.getDate()-1); }  // rest freezes, doesn't count
     else break;
@@ -1556,10 +1609,11 @@ function renderBigStats(){
     <div class="stat"><div class="v">${state.sessions.length}</div><div class="l">workouts</div></div>
     <div class="stat"><div class="v">${best}</div><div class="l">best streak</div></div>`;
 }
-function weekAgg(wk){
+function weekAgg(wk, upto){
   const out = {n:0, vol:0, mi:0, cal:0};
   state.sessions.forEach(s=>{
     if(mondayOf(s.date) !== wk) return;
+    if(upto && s.date > upto) return;
     out.n++; out.vol += sessionVolume(s); out.cal += sessionCalories(s)||0;
     ['run','walk','bike'].forEach(f=>{ if(s[f] && s[f].mi) out.mi += +s[f].mi; });
   });
@@ -1567,8 +1621,12 @@ function weekAgg(wk){
 }
 function renderRecap(){
   const cap = document.getElementById('recapcap'), el = document.getElementById('recap');
-  const wk = mondayOf(todayISO());
-  const cur = weekAgg(wk), prev = weekAgg(addDays(wk, -7));
+  const t = todayISO();
+  const wk = mondayOf(t);
+  const dow = (new Date(t+'T12:00:00').getDay()+6)%7;
+  const prevWk = addDays(wk, -7);
+  // compare against last week UP TO the same weekday, not the whole week
+  const cur = weekAgg(wk), prev = weekAgg(prevWk, addDays(prevWk, dow));
   if(!cur.n && !prev.n){ cap.style.display='none'; el.style.display='none'; return; }
   cap.style.display='block'; el.style.display='flex';
   const tile = (v, l, d, fmt) => {
@@ -1587,7 +1645,11 @@ function renderHeatmap(){
   if(!state.sessions.length){ card.style.display='none'; return; }
   card.style.display='block';
   const today = todayISO();
-  const startMon = addDays(mondayOf(today), -7*11);
+  // anchor the grid at the journey's first week (leftmost) so it fills left-to-right;
+  // once history exceeds 12 weeks, slide to the most recent 12
+  const firstWk = mondayOf(state.sessions[0].date);
+  const recentWk = addDays(mondayOf(today), -7*11);
+  const startMon = firstWk > recentWk ? firstWk : recentWk;
   let html = '';
   for(let w=0; w<12; w++){
     let col = '';
