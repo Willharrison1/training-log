@@ -502,6 +502,7 @@ const EXLIB = {
   cgb:  {name:'Close-grip bench',              tag:'push', sets:3, reps:'8–12',  repMax:12},
   pushup:{name:'Push-ups',                     tag:'push', sets:3, reps:'10–20', repMax:20},
   floorpress:{name:'DB floor press',           tag:'push', sets:4, reps:'8–12',  repMax:12},
+  dbbench:{name:'DB bench press',              tag:'push', sets:4, reps:'8–12',  repMax:12},
   row:  {name:'Rows (barbell or cable)',       tag:'pull', sets:4, reps:'6–10',  repMax:10},
   lat:  {name:'Lat pulldown',                  tag:'pull', sets:3, reps:'8–12',  repMax:12},
   curl: {name:'Bicep curls',                   tag:'pull', sets:3, reps:'10–15', repMax:15},
@@ -541,7 +542,7 @@ const EXNAMES = {bench:'Bench (free)', smith:'Bench (smith)', ohp:'Shoulder pres
   split:'Split squats', ham:'Hamstring curls', ext:'Leg extensions',
   rdl:'Romanian DL', calf:'Calf raises', legpress:'Leg press', goblet:'Goblet squat',
   stepup:'Step-ups', lunge:'Lunges', kbswing:'KB swings', glutebridge:'Glute bridge', sldl:'1-leg RDL',
-  pushup:'Push-ups', floorpress:'Floor press', plank:'Plank', legraise:'Leg raises', crunch:'Crunches',
+  pushup:'Push-ups', floorpress:'Floor press', dbbench:'DB bench', plank:'Plank', legraise:'Leg raises', crunch:'Crunches',
   twist:'Russian twists', backext:'Back extensions', abwheel:'Ab wheel', sideplank:'Side plank'};
 
 /* ---------- presets (the old Day 1-7 program) ---------- */
@@ -579,8 +580,8 @@ const PRESETS = [
     notes:{plank:'Rest-day core — easy effort, keep the habit alive.',
       twist:'Slow and controlled — this is recovery, not a workout.'}},
   {id:8, label:'Apartment Push', type:'push',
-    items:['__warmup','floorpress','ohp','pushup','latr','tri','__run','goblet','plank','__stretch'],
-    notes:{floorpress:'Bench stand-in — the floor stops your elbows, press hard off it. Heaviest DBs you own.',
+    items:['__warmup','dbbench','ohp','pushup','latr','tri','__run','goblet','plank','__stretch'],
+    notes:{dbbench:'On the bench, heaviest DBs available — alternate flat and incline week to week.',
       ohp:'Standing, DBs or kettlebells overhead.',
       pushup:'After the presses — to near failure. Elevate feet once 20 gets easy.',
       tri:'The tricep-pull station.',
