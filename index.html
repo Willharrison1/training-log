@@ -510,6 +510,8 @@ const EXLIB = {
   sarow:{name:'Single-arm DB row',             tag:'pull', sets:3, reps:'8–12',  repMax:12},
   sapd: {name:'Straight-arm pulldown',         tag:'pull', sets:3, reps:'12–15', repMax:15},
   bbcurl:{name:'Barbell curls',                tag:'pull', sets:3, reps:'8–12',  repMax:12},
+  csrow:{name:'Chest-supported row',           tag:'pull', sets:4, reps:'6–10',  repMax:10},
+  hammer:{name:'Hammer curls (DB)',            tag:'pull', sets:3, reps:'10–15', repMax:15},
   split:{name:'Split squats (per leg)',        tag:'legs', sets:2, reps:'10–12', repMax:12},
   ham:  {name:'Hamstring curls',               tag:'legs', sets:2, reps:'10–15', repMax:15},
   ext:  {name:'Leg extensions',                tag:'legs', sets:2, reps:'10–15', repMax:15},
@@ -534,6 +536,7 @@ const EXNAMES = {bench:'Bench (free)', smith:'Bench (smith)', ohp:'Shoulder pres
   dip:'Dips', latr:'Lateral raises', idb:'Incline DB press', cgb:'Close-grip bench',
   row:'Rows', lat:'Lat pulldown', curl:'Bicep curls', rdf:'Rear delt fly',
   pullup:'Pull-ups', shrug:'Shrugs', sarow:'1-arm DB row', sapd:'Straight-arm pulldown', bbcurl:'Barbell curls',
+  csrow:'Chest-supported row', hammer:'Hammer curls',
   split:'Split squats', ham:'Hamstring curls', ext:'Leg extensions',
   rdl:'Romanian DL', calf:'Calf raises', legpress:'Leg press', goblet:'Goblet squat',
   stepup:'Step-ups', lunge:'Lunges', kbswing:'KB swings', glutebridge:'Glute bridge', sldl:'1-leg RDL',
@@ -542,38 +545,40 @@ const EXNAMES = {bench:'Bench (free)', smith:'Bench (smith)', ohp:'Shoulder pres
 
 /* ---------- presets (the old Day 1-7 program) ---------- */
 const PRESETS = [
-  {id:1, label:'Push + Legs', type:'push', items:['bench','ohp','fly','tri','__run','split','latr','plank','crunch','__stretch'],
-    notes:{split:'After the run. Lighter DBs than fresh, 1–2 reps in reserve, hold a rail if shaky.',
-      latr:'Finisher: go light, 15–20 reps, chase the burn not the number.',
-      crunch:'Second core slot — slow reps, squeeze hard.'}},
-  {id:2, label:'Pull + Legs', type:'pull', items:['row','lat','curl','rdf','__run','ham','shrug','backext','legraise','__stretch'],
-    notes:{ham:'Machine — safe to push to failure after the run.',
-      shrug:'Finisher: squeeze 2 seconds at the top of every rep.',
-      backext:'Lower back + glutes — controlled and smooth, no jerking.'}},
-  {id:3, label:'Push Volume', type:'push', items:['bench','ohp','idb','fly','tri','__run','calf','latr','twist','__stretch'],
-    notes:{bench:'Swap incline/flat from your last push day.',
-      idb:'If bench was incline today, go flat DBs here — and vice versa.',
+  {id:1, label:'Push Heavy + Legs', type:'push', items:['__warmup','bench','ohp','fly','tri','__run','split','latr','plank','__stretch'],
+    notes:{bench:'Heavy day. Top of the range on all sets means +5 next time — the yellow line will tell you.',
+      fly:'The deep stretch at the bottom is the half that grows — slow there.',
+      split:'After the run. Lighter DBs than fresh, 1–2 reps in reserve, hold a rail if shaky.',
+      latr:'Finisher: go light, 15–20 reps, chase the burn not the number.'}},
+  {id:2, label:'Pull Heavy + Legs', type:'pull', items:['__warmup','csrow','lat','curl','rdf','__run','ham','backext','legraise','__stretch'],
+    notes:{csrow:'Chest on the pad, zero lower-back load — this is where you pull heavy now.',
+      ham:'Machine — safe to push to failure after the run.',
+      backext:'Bodyweight, smooth — building the lower back up, never testing it.'}},
+  {id:3, label:'Push Volume', type:'push', items:['__warmup','idb','ohp','fly','tri','__run','calf','latr','twist','__stretch'],
+    notes:{idb:'Leads today — the flat bench rests, the chest doesn’t.',
       calf:'Only leg work today — slow negatives, full stretch at the bottom.',
       latr:'Finisher: light, 15–20 reps, arms still have gas after the run.'}},
-  {id:4, label:'Pull + Legs', type:'pull', items:['row','lat','sarow','curl','rdf','__run','glutebridge','abwheel','crunch','__stretch'],
-    notes:{sarow:'Pull-up stand-in for now — go heavy, brace on the bench.',
+  {id:4, label:'Pull + Glutes', type:'pull', items:['__warmup','sarow','lat','bbcurl','rdf','__run','glutebridge','abwheel','crunch','__stretch'],
+    notes:{sarow:'Pull-up stand-in — go heavy, brace on the bench, back stays flat.',
+      bbcurl:'Strict — elbows pinned to your sides.',
       glutebridge:'Glute project: pause 2s at the top, squeeze like it owes you money. This is what fixes the run pain.',
       abwheel:'From the knees, brace hard before you roll — short range until it owns you.'}},
-  {id:5, label:'Push + Legs', type:'push', items:['bench','ohp','cgb','tri','__run','split','bbcurl','legraise','twist','__stretch'],
+  {id:5, label:'Push Pump + Legs', type:'push', items:['__warmup','bench','cgb','latr','tri','__run','goblet','legraise','twist','__stretch'],
     notes:{cgb:'Dip stand-in — narrow grip, elbows tucked, chest and triceps together.',
-      split:'After the run. Lighter DBs than fresh, 1–2 reps in reserve.',
-      bbcurl:'Post-run arm bonus on a push day — strict form, zero swinging.',
+      latr:'In the main block today — a touch heavier than finisher days.',
+      goblet:'Alternate weeks with split squats. Upright torso — easy on the lower back.',
       twist:'Second core slot — slow and controlled.'}},
-  {id:6, label:'Pull Volume', type:'pull', items:['row','lat','sapd','curl','rdf','__run','sldl','shrug','sideplank','__stretch'],
-    notes:{sapd:'Pull-up stand-in — lats only, no bicep takeover, feel the stretch.',
-      sldl:'Glute + stabilizer project: light DB, slow, wobbling is the exercise working.',
-      shrug:'Finisher: squeeze at the top, let the traps grow.',
-      sideplank:'Stabilizer work — hips stacked, straight line, no sagging.'}},
+  {id:6, label:'Pull Pump', type:'pull', items:['__warmup','csrow','sapd','hammer','shrug','rdf','__run','sldl','sideplank','__stretch'],
+    notes:{csrow:'Second weekly dose — slightly lighter than Day 2, perfect reps.',
+      sapd:'Pull-up stand-in — lats only, no bicep takeover, feel the stretch.',
+      hammer:'Forearms + arm thickness — slow negatives.',
+      sldl:'Glute + stabilizer project: light DB, slow — wobbling is the exercise working.',
+      sideplank:'Hips stacked, straight line, no sagging.'}},
   {id:7, label:'Walk day', type:'walk', items:['__walk','plank','twist','__stretch'],
     notes:{plank:'Rest-day core — easy effort, keep the habit alive.',
       twist:'Slow and controlled — this is recovery, not a workout.'}},
   {id:8, label:'Apartment Push/Pull', type:'custom',
-    items:['pushup','ohp','latr','sarow','curl','rdf','tri','__run','kbswing','plank','__stretch'],
+    items:['__warmup','pushup','ohp','latr','sarow','curl','rdf','tri','__run','kbswing','plank','__stretch'],
     notes:{pushup:'Elevate your feet once 20 gets easy.',
       ohp:'DBs or kettlebells overhead — whatever the apartment rack has.',
       sarow:'Brace on a chair or couch arm.',
@@ -771,6 +776,7 @@ function newItem(k, note){
   if(k === '__swim') return {k:'__swim', min:'', yd:''};
   if(k === '__bike') return {k:'__bike', min:'', mi:''};
   if(k === '__stretch') return {k:'__stretch', done:false};
+  if(k === '__warmup') return {k:'__warmup', done:false};
   const inf = exInfo(k) || {sets:3};
   const it = {k, sets:Array.from({length:inf.sets||3}, ()=>({w:'',r:'',done:false}))};
   if(note) it.note = note;
@@ -785,7 +791,7 @@ function exOptions(){
       ks.map(k=>`<option value="${k}">${exName(k)}</option>`).join('') + '</optgroup>';
   });
   h += '<optgroup label="CARDIO"><option value="__run">Run</option><option value="__walk">Walk</option><option value="__swim">Swim</option><option value="__bike">Bike</option></optgroup>';
-  h += '<optgroup label="RECOVERY"><option value="__stretch">Stretch routine</option></optgroup>';
+  h += '<optgroup label="RECOVERY"><option value="__warmup">Warm-up routine</option><option value="__stretch">Stretch routine</option></optgroup>';
   return h;
 }
 function presetSel(sel){ const v = +sel.value; sel.value=''; if(v) loadPreset(v); }
@@ -926,12 +932,35 @@ function stretchDone(i, btn){
   btn.classList.toggle('on', it.done);
   persist();
 }
+function warmupCard(it, i){
+  const swapSel = swapIdx===i ?
+    `<select onchange="doSwap(this,${i})" style="margin-top:10px">
+      <option value="">Swap to…</option>${exOptions()}</select>` : '';
+  return `<div class="card">
+    <h3><span class="bar core"></span>Warm-up<span class="target">~5 min</span>
+      ${itemCtl(i)}</h3>
+    ${itemMenuRow(i)}
+    ${swapSel}
+    <div class="stx">
+      Cat-cow — × 10<br>
+      Bird dog — × 8 / side<br>
+      Glute bridge (bodyweight) — × 15<br>
+      Leg swings — × 12 / side<br>
+      World's greatest lunge — × 5 / side<br>
+      Arm circles + wall slides — × 15<br>
+      <b>Then</b> 2 ramp sets of your first lift at ~50% and ~75%
+    </div>
+    <div class="note">Five minutes that make everything after them work better — the bird dogs and bridges are the lower-back and glute insurance. Never lift or run cold.</div>
+    <div class="exbtns"><button class="mini ${it.done?'on':''}" onclick="stretchDone(${i},this)">✓ warmed up</button></div>
+  </div>`;
+}
 function itemCard(it, i){
   if(it.k === '__run')  return runCard(it, i);
   if(it.k === '__walk') return walkCard(it, i);
   if(it.k === '__swim') return swimCard(it, i);
   if(it.k === '__bike') return bikeCard(it, i);
   if(it.k === '__stretch') return stretchCard(it, i);
+  if(it.k === '__warmup') return warmupCard(it, i);
   if(it.collapsed){
     const summary = it.sets.filter(s=>s.w||s.r).map(s=>`${s.w||'–'}×${s.r||'?'}`).join(', ');
     const inf2 = exInfo(it.k) || {tag:'push'};
@@ -1072,6 +1101,7 @@ function sessionLines(s){
   if(s.walk && (s.walk.min||s.walk.mi)) parts.push(`Walk ${s.walk.min||'?'} min${s.walk.mi ? ' · '+s.walk.mi+' mi' : ''}`);
   if(s.swim && (s.swim.min||s.swim.yd)) parts.push(`Swim ${s.swim.min||'?'} min${s.swim.yd ? ' · '+s.swim.yd+' yd' : ''}`);
   if(s.bike && (s.bike.min||s.bike.mi)) parts.push(`Bike ${s.bike.min||'?'} min${s.bike.mi ? ' · '+s.bike.mi+' mi' : ''}`);
+  if(s.warmup) parts.push('Warmed up ✓');
   if(s.stretch) parts.push('Stretched ✓');
   return parts;
 }
@@ -1117,7 +1147,7 @@ function builderCard(){
 function clearUnfinished(){
   const d = draft();
   d.items = d.items.filter(it=>{
-    if(it.k === '__stretch') return it.done;
+    if(it.k === '__stretch' || it.k === '__warmup') return it.done;
     if(!it.sets) return ['min','sec','mi','yd'].some(f=>it[f]);
     return it.sets.some(s=>s.w||s.r);
   });
@@ -1185,7 +1215,8 @@ function renderWorkout(){
   html += `<div class="card" style="margin-top:14px"><details><summary>Standing rules</summary>
     <div class="rules" style="margin-top:8px">
       <b>Progress:</b> add weight or a rep when you hit the top of the range on all sets.<br>
-      <b>Order:</b> heavy compounds fresh · run · finishers with whatever's still alive · core.<br>
+      <b>Order:</b> warm-up · heavy compounds fresh · run · finishers · core · stretch.<br>
+      <b>Lower back:</b> rows stay chest-supported, hinges stay light and smooth, core stays anti-extension. Build it, don't test it.<br>
       <b>Finishers</b> are pump work — light, 15–20 reps, chase blood not PRs.<br>
       <b>Machines</b> can go to failure; split squats stay 1–2 reps short.<br>
       <b>Runs</b> conversational pace, one harder push-day run per week.<br>
@@ -1250,7 +1281,7 @@ function finishDay(){
   const d = state.drafts[selDate];
   if(!d || !d.items.length) return;
   const entries = {}; const order = [];
-  let run = null, walk = null, swim = null, bike = null, stretch = false;
+  let run = null, walk = null, swim = null, bike = null, stretch = false, warmup = false;
   d.items.forEach(it=>{
     if(it.k === '__run'){
       if(it.min||it.sec||it.mi){ run = {min:it.min, sec:it.sec, mi:it.mi}; order.push('__run'); }
@@ -1272,6 +1303,10 @@ function finishDay(){
       if(it.done){ stretch = true; order.push('__stretch'); }
       return;
     }
+    if(it.k === '__warmup'){
+      if(it.done){ warmup = true; order.push('__warmup'); }
+      return;
+    }
     const filled = it.sets.filter(s=>s.w||s.r);
     if(filled.length){
       if(!entries[it.k]) order.push(it.k);
@@ -1288,7 +1323,7 @@ function finishDay(){
   delete state.restDays[selDate];
   if(d.editId){
     const s = state.sessions.find(x=>x.id===d.editId);
-    if(s) Object.assign(s, {entries, run, walk, swim, bike, stretch, note:d.note||'', label, type, order});
+    if(s) Object.assign(s, {entries, run, walk, swim, bike, stretch, warmup, note:d.note||'', label, type, order});
     delete state.drafts[selDate];
     persist();
     renderWeek(); renderWorkout(); renderStats();
@@ -1302,7 +1337,7 @@ function finishDay(){
     dur = Math.max(1, Math.round((Date.now() - d.startedAt - pausedMs)/60000));
   }
   const preMiles = milestonesAchieved();
-  state.sessions.push({id, date:selDate, label, type, entries, run, walk, swim, bike, stretch, note:d.note||'', dur, order});
+  state.sessions.push({id, date:selDate, label, type, entries, run, walk, swim, bike, stretch, warmup, note:d.note||'', dur, order});
   state.sessions.sort((a,b)=> a.date<b.date ? -1 : a.date>b.date ? 1 : a.id-b.id);
   const prs = detectPRs(entries, id);
   const newMiles = milestonesAchieved().filter(m=>!preMiles.includes(m));
@@ -1327,6 +1362,7 @@ function editSession(id){
     if(k === '__swim'){ if(s.swim) items.push({k:'__swim', min:s.swim.min||'', yd:s.swim.yd||''}); return; }
     if(k === '__bike'){ if(s.bike) items.push({k:'__bike', min:s.bike.min||'', mi:s.bike.mi||''}); return; }
     if(k === '__stretch'){ if(s.stretch) items.push({k:'__stretch', done:true}); return; }
+    if(k === '__warmup'){ if(s.warmup) items.push({k:'__warmup', done:true}); return; }
     if(s.entries && s.entries[k])
       items.push({k, sets:s.entries[k].map(x=>({w:x.w||'', r:x.r||'', done:true}))});
   });
