@@ -200,6 +200,7 @@
     transition:transform .12s ease, color .15s, background .15s;
   }
   .mini:active{transform:scale(.95); color:var(--ink); background:var(--line)}
+  .mini.arm{color:var(--push); border-color:rgba(226,84,74,.5)}
 
   .runrow{display:flex; gap:8px; margin-top:10px; align-items:center}
   .runrow input{
@@ -766,7 +767,18 @@ function sessBar(d){
     ${!d.startedAt ? `<button class="mini" onclick="sessStart()">▶ start now</button>` :
       paused ? `<button class="mini" onclick="sessResume()">▶ resume</button>` :
       `<button class="mini" onclick="sessPause()">⏸ pause</button>`}
+    ${d.startedAt ? `<button class="mini" onclick="sessReset(this)">↺</button>` : ''}
   </div>`;
+}
+function sessReset(btn){
+  if(!btn.classList.contains('arm')){
+    btn.classList.add('arm'); btn.textContent = 'reset?';
+    setTimeout(()=>{ btn.classList.remove('arm'); btn.textContent = '↺'; }, 2500);
+    return;
+  }
+  const d = draft();
+  delete d.startedAt; delete d.pausedMs; delete d.pausedAt;
+  persist(); renderWorkout();
 }
 
 /* ---------- calendar week strip ---------- */
