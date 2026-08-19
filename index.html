@@ -648,6 +648,9 @@ async function loadState(){
   if(!state.customEx) state.customEx = {};
   if(!state.restDays) state.restDays = {};
   if(!state.exNotes) state.exNotes = {};
+  for(const k in state.exNotes){
+    if(typeof state.exNotes[k] === 'string') state.exNotes[k] = {txt: state.exNotes[k], from: null};
+  }
   delete state.protein;
   migrate();
 }
@@ -965,10 +968,10 @@ function collapseItem(i){
 }
 function editExNote(i){
   const k = draft().items[i].k;
-  const cur = state.exNotes[k] || '';
-  const n = prompt('Note for ' + exName(k) + ' — shows every time it comes up:', cur);
+  const cur = state.exNotes[k] ? state.exNotes[k].txt : '';
+  const n = prompt('Note to self for next ' + exName(k) + ' session — shows once, then clears itself:', cur);
   if(n === null) return;
-  if(n.trim()) state.exNotes[k] = n.trim();
+  if(n.trim()) state.exNotes[k] = {txt: n.trim(), from: selDate};
   else delete state.exNotes[k];
   menuIdx = null;
   persist(); renderWorkout();
@@ -1126,7 +1129,7 @@ function itemCard(it, i){
       ${itemCtl(i)}</h3>
     ${itemMenuRow(i)}
     ${it.note ? `<div class="note">${it.note}</div>` : ''}
-    ${state.exNotes[it.k] ? `<div class="note exnote">✎ ${state.exNotes[it.k]}</div>` : ''}
+    ${state.exNotes[it.k] ? `<div class="note exnote">✎ ${state.exNotes[it.k].txt}</div>` : ''}
     ${lastTxt ? `<div class="last">${lastTxt}</div>` : ''}
     ${beat}
     ${qhKey===it.k ? qhistHTML(it.k) : ''}
@@ -1473,6 +1476,11 @@ function finishDay(){
   state.sessions.sort((a,b)=> a.date<b.date ? -1 : a.date>b.date ? 1 : a.id-b.id);
   const prs = detectPRs(entries, id);
   const newMiles = milestonesAchieved().filter(m=>!preMiles.includes(m));
+  // one-shot exercise notes: consume any note that was shown this session
+  // (written in an earlier session); notes written today survive for next time
+  for(const k in entries){
+    if(state.exNotes[k] && state.exNotes[k].from !== selDate) delete state.exNotes[k];
+  }
   if(d.preset && d.preset.id) state.lastPreset = d.preset.id;
   delete state.drafts[selDate];
   persist();
