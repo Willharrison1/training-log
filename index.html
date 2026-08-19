@@ -153,7 +153,15 @@
   .card{
     background:var(--grad-card); border:1px solid var(--edge); border-radius:18px;
     padding:15px 14px; margin-bottom:12px; box-shadow:var(--shadow-card);
+    position:relative;
   }
+  .cfold{
+    position:absolute; right:5px; bottom:4px;
+    background:none; border:none; color:var(--faint);
+    font-size:15px; padding:6px 11px; cursor:pointer; line-height:1;
+    transition:color .15s, transform .12s ease;
+  }
+  .cfold:active{color:var(--ink); transform:scale(.9)}
   .card h3{font-family:var(--disp); font-size:18px; font-weight:600; letter-spacing:.03em; display:flex; align-items:center; gap:8px}
   .bar{width:4px; height:16px; border-radius:2px; flex:none}
   .bar.push{background:var(--push); box-shadow:0 0 8px rgba(226,84,74,.5)}
@@ -949,7 +957,10 @@ function moveItem(i, dir){
   persist(); renderWorkout();
 }
 function itemCtl(i){
-  return `<button class="ictl" onclick="collapseItem(${i})" title="collapse">▾</button><button class="ictl" onclick="itemMenu(${i})" title="options">⋯</button>`;
+  return `<button class="ictl" onclick="itemMenu(${i})" title="options">⋯</button>`;
+}
+function foldBtn(i){
+  return `<button class="cfold" onclick="collapseItem(${i})" title="collapse">▾</button>`;
 }
 function itemMenuRow(i){
   if(menuIdx !== i) return '';
@@ -980,6 +991,9 @@ function editExNote(i){
 }
 function howTo(q){
   window.open('https://www.google.com/search?q=' + encodeURIComponent(q), '_blank');
+}
+function howToImg(q){
+  window.open('https://www.google.com/search?tbm=isch&q=' + encodeURIComponent(q), '_blank');
 }
 function howToItem(i){
   howTo('how to ' + exName(draft().items[i].k) + ' exercise proper form');
@@ -1034,19 +1048,20 @@ function stretchCard(it, i){
     ${swapSel}
     <div class="stx">
       <b>Hamstrings &amp; lower</b><br>
-      <span class="stxl" onclick="howTo('standing forward fold stretch how to')">Standing forward fold</span> — 45s<br>
-      <span class="stxl" onclick="howTo('seated single leg hamstring stretch how to')">Seated single-leg reach</span> — 45s / side<br>
-      <span class="stxl" onclick="howTo('figure 4 glute stretch how to')">Figure-4 glute stretch</span> — 30s / side<br>
-      <span class="stxl" onclick="howTo('couch stretch hip flexor how to')">Couch / hip-flexor stretch</span> — 45s / side<br>
-      <span class="stxl" onclick="howTo('standing calf stretch wall how to')">Standing calf stretch</span> — 30s / side<br>
+      <span class="stxl" onclick="howToImg('standing forward fold stretch how to')">Standing forward fold</span> — 45s<br>
+      <span class="stxl" onclick="howToImg('seated single leg hamstring stretch how to')">Seated single-leg reach</span> — 45s / side<br>
+      <span class="stxl" onclick="howToImg('figure 4 glute stretch how to')">Figure-4 glute stretch</span> — 30s / side<br>
+      <span class="stxl" onclick="howToImg('couch stretch hip flexor how to')">Couch / hip-flexor stretch</span> — 45s / side<br>
+      <span class="stxl" onclick="howToImg('standing calf stretch wall how to')">Standing calf stretch</span> — 30s / side<br>
       <b>Arms &amp; upper</b><br>
-      <span class="stxl" onclick="howTo('cross body shoulder stretch how to')">Cross-body shoulder</span> — 30s / arm<br>
-      <span class="stxl" onclick="howTo('overhead triceps stretch how to')">Overhead triceps</span> — 30s / arm<br>
-      <span class="stxl" onclick="howTo('doorway chest stretch how to')">Doorway chest stretch</span> — 45s<br>
-      <span class="stxl" onclick="howTo('wrist flexor stretch how to')">Wrist-flexor pull-backs</span> — 30s / arm
+      <span class="stxl" onclick="howToImg('cross body shoulder stretch how to')">Cross-body shoulder</span> — 30s / arm<br>
+      <span class="stxl" onclick="howToImg('overhead triceps stretch how to')">Overhead triceps</span> — 30s / arm<br>
+      <span class="stxl" onclick="howToImg('doorway chest stretch how to')">Doorway chest stretch</span> — 45s<br>
+      <span class="stxl" onclick="howToImg('wrist flexor stretch how to')">Wrist-flexor pull-backs</span> — 30s / arm
     </div>
     <div class="note">Tap any stretch for a video demo. Use the timer for holds. Stretch to tension, never pain — exhale into it.</div>
     <div class="exbtns"><button class="mini ${it.done?'on':''}" onclick="stretchDone(${i},this)">✓ done stretching</button></div>
+    ${foldBtn(i)}
   </div>`;
 }
 function stretchDone(i, btn){
@@ -1065,15 +1080,16 @@ function warmupCard(it, i){
     ${itemMenuRow(i)}
     ${swapSel}
     <div class="stx">
-      <span class="stxl" onclick="howTo('cat cow exercise how to')">Cat-cow</span> — × 10<br>
-      <span class="stxl" onclick="howTo('bird dog exercise how to')">Bird dog</span> — × 8 / side<br>
-      <span class="stxl" onclick="howTo('bodyweight glute bridge how to')">Glute bridge (bodyweight)</span> — × 15<br>
-      <span class="stxl" onclick="howTo('leg swings dynamic warmup how to')">Leg swings</span> — × 12 / side<br>
-      <span class="stxl" onclick="howTo('worlds greatest stretch lunge how to')">World's greatest lunge</span> — × 5 / side<br>
-      <span class="stxl" onclick="howTo('arm circles wall slides warmup how to')">Arm circles + wall slides</span> — × 15
+      <span class="stxl" onclick="howToImg('cat cow exercise how to')">Cat-cow</span> — × 10<br>
+      <span class="stxl" onclick="howToImg('bird dog exercise how to')">Bird dog</span> — × 8 / side<br>
+      <span class="stxl" onclick="howToImg('bodyweight glute bridge how to')">Glute bridge (bodyweight)</span> — × 15<br>
+      <span class="stxl" onclick="howToImg('leg swings dynamic warmup how to')">Leg swings</span> — × 12 / side<br>
+      <span class="stxl" onclick="howToImg('worlds greatest stretch lunge how to')">World's greatest lunge</span> — × 5 / side<br>
+      <span class="stxl" onclick="howToImg('arm circles wall slides warmup how to')">Arm circles + wall slides</span> — × 15
     </div>
     <div class="note">Tap any move for a video demo. Stretching-studio stop between the lifts and the run — the bird dogs and bridges wake the glutes and armor the lower back so the run doesn't hurt. Dynamic only; the long holds stay post-workout.</div>
     <div class="exbtns"><button class="mini ${it.done?'on':''}" onclick="stretchDone(${i},this)">✓ activated</button></div>
+    ${foldBtn(i)}
   </div>`;
 }
 function collapsedCard(it, i){
@@ -1142,6 +1158,7 @@ function itemCard(it, i){
       <button class="mini" onclick="dropSet(${i})">− set</button>
       ${last ? `<button class="mini" onclick="fillLast(${i})">fill last</button>` : ''}
     </div>
+    ${foldBtn(i)}
   </div>`;
 }
 function runCard(it, i){
@@ -1162,6 +1179,7 @@ function runCard(it, i){
         oninput="cardioVal(${i},'mi',this.value)"><div class="rlab">miles</div></div>
     </div>
     <div class="pace" id="pace${i}">${paceStr(it)}</div>
+    ${foldBtn(i)}
   </div>`;
 }
 function walkCard(it, i){
@@ -1179,6 +1197,7 @@ function walkCard(it, i){
       <div style="flex:1"><input type="number" inputmode="decimal" step="0.1" placeholder="1.0" value="${it.mi||''}"
         oninput="cardioVal(${i},'mi',this.value)"><div class="rlab">miles (opt.)</div></div>
     </div>
+    ${foldBtn(i)}
   </div>`;
 }
 function swimCard(it, i){
@@ -1196,6 +1215,7 @@ function swimCard(it, i){
       <div style="flex:1"><input type="number" inputmode="numeric" placeholder="500" value="${it.yd||''}"
         oninput="cardioVal(${i},'yd',this.value)"><div class="rlab">yards (opt.)</div></div>
     </div>
+    ${foldBtn(i)}
   </div>`;
 }
 function bikeCard(it, i){
@@ -1214,6 +1234,7 @@ function bikeCard(it, i){
         oninput="cardioVal(${i},'mi',this.value)"><div class="rlab">miles (opt.)</div></div>
     </div>
     <div class="pace" id="mph${i}">${mphStr(it)}</div>
+    ${foldBtn(i)}
   </div>`;
 }
 function paceStr(r){
