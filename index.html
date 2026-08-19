@@ -168,6 +168,8 @@
   }
   .ictl:active{color:var(--ink); transform:scale(.9)}
   .note{font-size:12px; color:var(--mut); margin-top:4px; line-height:1.45}
+  .note.exnote{color:var(--legs); opacity:.9}
+  .stxl{cursor:pointer; border-bottom:1px dotted var(--faint)}
   .last{font-size:12px; color:var(--faint); font-family:var(--mono); margin-top:6px}
   .beat{display:inline-block; margin-top:6px; font-size:11.5px; font-weight:600; color:var(--legs);
     border:1px solid rgba(229,185,63,.55); background:rgba(229,185,63,.09); border-radius:20px; padding:2.5px 10px}
@@ -335,6 +337,16 @@
   .wfun{font-size:13.5px; color:var(--ink); margin-top:9px; line-height:1.55; opacity:.9}
   @keyframes wup{from{opacity:0; transform:translateY(16px)} to{opacity:1; transform:none}}
 
+  /* timer overlay */
+  #tmroverlay{
+    position:fixed; inset:0; z-index:120; display:none;
+    flex-direction:column; align-items:center; justify-content:center; gap:24px;
+    background:rgba(10,13,17,.96); backdrop-filter:blur(12px);
+  }
+  #tmroverlay.on{display:flex}
+  .tbig{font-family:var(--mono); font-size:84px; font-weight:700; color:var(--ink); letter-spacing:.02em; line-height:1}
+  #tmroverlay .mini{font-size:15px; padding:12px 26px; border-radius:12px}
+
   /* undo toast */
   #undotoast{
     position:fixed; bottom:78px; left:50%; transform:translateX(-50%);
@@ -491,6 +503,13 @@
   <button onclick="undoDelete()">Undo</button>
 </div>
 
+<div id="tmroverlay">
+  <button class="wclose" onclick="tmrClose()">×</button>
+  <div class="tbig" id="tmrbig">0:00</div>
+  <div class="exbtns" id="tmrbtns" style="margin-top:0; justify-content:center"></div>
+  <div class="dsub">screen stays awake while it runs</div>
+</div>
+
 <nav>
   <button class="on" data-tab="today" onclick="switchTab('today',this)">Today</button>
   <button data-tab="history" onclick="switchTab('history',this)">History</button>
@@ -616,7 +635,7 @@ const PRESETS = [
       kbswing:'Glute power for pain-free running — hips snap, arms just hold on. Not a squat, a hinge.'}}
 ];
 
-let state = { sessions:[], weights:[], drafts:{}, customEx:{}, restDays:{}, lastPreset:0 };
+let state = { sessions:[], weights:[], drafts:{}, customEx:{}, restDays:{}, exNotes:{}, lastPreset:0 };
 let selDate = null, weekMon = null, swapIdx = null, qhKey = null, menuIdx = null;
 let saveTimer = null;
 
@@ -628,6 +647,7 @@ async function loadState(){
   }catch(e){ /* first run, defaults stand */ }
   if(!state.customEx) state.customEx = {};
   if(!state.restDays) state.restDays = {};
+  if(!state.exNotes) state.exNotes = {};
   delete state.protein;
   migrate();
 }
@@ -720,22 +740,55 @@ async function tmrLock(){
 function tmrUnlock(){
   try{ if(wakeLock){ wakeLock.release(); wakeLock = null; } }catch(e){}
 }
+function tmrTick(){
+  const txt = fmtT(Date.now() - tmrStart);
+  document.getElementById('tmrval').textContent = txt;
+  const b = document.getElementById('tmrbig');
+  if(b) b.textContent = txt;
+}
+function tmrColors(){
+  const c = tmrState==='run' ? 'var(--run)' : tmrState==='stop' ? 'var(--legs)' : '';
+  document.getElementById('tmrval').style.color = c;
+  document.getElementById('tmrbig').style.color = c || 'var(--ink)';
+}
+function tmrButtons(){
+  const el = document.getElementById('tmrbtns');
+  if(tmrState === 'run')
+    el.innerHTML = `<button class="mini" onclick="tmrStop()">⏹ stop</button>
+      <button class="mini" onclick="tmrGo()">↺ restart</button>`;
+  else if(tmrState === 'stop')
+    el.innerHTML = `<button class="mini" onclick="tmrGo()">▶ go again</button>
+      <button class="mini" onclick="tmrReset()">↺ reset</button>`;
+  else
+    el.innerHTML = `<button class="mini" onclick="tmrGo()">▶ start</button>`;
+}
+function tmrGo(){
+  tmrState = 'run'; tmrStart = Date.now();
+  clearInterval(tmrInt);
+  tmrInt = setInterval(tmrTick, 250);
+  tmrTick(); tmrColors(); tmrButtons(); tmrLock();
+}
+function tmrStop(){
+  tmrState = 'stop';
+  clearInterval(tmrInt);
+  tmrTick(); tmrColors(); tmrButtons(); tmrUnlock();
+}
+function tmrReset(){
+  tmrState = 'idle';
+  clearInterval(tmrInt);
+  document.getElementById('tmrval').textContent = '0:00';
+  document.getElementById('tmrbig').textContent = '0:00';
+  tmrColors(); tmrButtons(); tmrUnlock();
+}
+function tmrClose(){ document.getElementById('tmroverlay').classList.remove('on'); }
 function timerTap(){
-  const v = document.getElementById('tmrval');
-  if(tmrState === 'idle'){
-    tmrState = 'run'; tmrStart = Date.now();
-    v.style.color = 'var(--run)';
-    tmrInt = setInterval(()=>{ v.textContent = fmtT(Date.now()-tmrStart); }, 250);
-    tmrLock();
-  } else if(tmrState === 'run'){
-    tmrState = 'stop'; clearInterval(tmrInt);
-    v.textContent = fmtT(Date.now()-tmrStart);
-    v.style.color = 'var(--legs)';
-    tmrUnlock();
-  } else {
-    tmrState = 'idle';
-    v.textContent = '0:00'; v.style.color = '';
-  }
+  document.getElementById('tmroverlay').classList.add('on');
+  if(tmrState === 'idle') tmrGo();
+  else { tmrColors(); tmrButtons(); if(tmrState==='stop') tmrTickFrozen(); }
+}
+function tmrTickFrozen(){
+  // stopped: big display mirrors the frozen chip value
+  document.getElementById('tmrbig').textContent = document.getElementById('tmrval').textContent;
 }
 document.addEventListener('visibilitychange', ()=>{
   if(document.visibilityState === 'visible' && tmrState === 'run') tmrLock();
@@ -894,12 +947,37 @@ function itemCtl(i){
 }
 function itemMenuRow(i){
   if(menuIdx !== i) return '';
-  return `<div class="exbtns">
+  const isEx = !draft().items[i].k.startsWith('__');
+  return `<div class="exbtns" style="flex-wrap:wrap">
     <button class="mini" onclick="moveItem(${i},-1)">↑ up</button>
     <button class="mini" onclick="moveItem(${i},1)">↓ down</button>
+    <button class="mini" onclick="collapseItem(${i})">▾ collapse</button>
     <button class="mini" onclick="swapItem(${i})">⇄ swap</button>
+    ${isEx ? `<button class="mini" onclick="editExNote(${i})">✎ note</button>` : ''}
+    ${isEx ? `<button class="mini" onclick="howToItem(${i})">▶ how-to</button>` : ''}
     <button class="mini" onclick="removeItem(${i})">× remove</button>
   </div>`;
+}
+function collapseItem(i){
+  draft().items[i].collapsed = true;
+  menuIdx = null; swapIdx = null;
+  persist(); renderWorkout();
+}
+function editExNote(i){
+  const k = draft().items[i].k;
+  const cur = state.exNotes[k] || '';
+  const n = prompt('Note for ' + exName(k) + ' — shows every time it comes up:', cur);
+  if(n === null) return;
+  if(n.trim()) state.exNotes[k] = n.trim();
+  else delete state.exNotes[k];
+  menuIdx = null;
+  persist(); renderWorkout();
+}
+function howTo(q){
+  window.open('https://www.youtube.com/results?search_query=' + encodeURIComponent(q), '_blank');
+}
+function howToItem(i){
+  howTo('how to ' + exName(draft().items[i].k) + ' exercise proper form');
 }
 
 /* ---------- day rendering ---------- */
@@ -951,26 +1029,26 @@ function stretchCard(it, i){
     ${swapSel}
     <div class="stx">
       <b>Hamstrings &amp; lower</b><br>
-      Standing forward fold — 45s<br>
-      Seated single-leg reach — 45s / side<br>
-      Figure-4 glute stretch — 30s / side<br>
-      Couch / hip-flexor stretch — 45s / side<br>
-      Standing calf stretch — 30s / side<br>
+      <span class="stxl" onclick="howTo('standing forward fold stretch how to')">Standing forward fold</span> — 45s<br>
+      <span class="stxl" onclick="howTo('seated single leg hamstring stretch how to')">Seated single-leg reach</span> — 45s / side<br>
+      <span class="stxl" onclick="howTo('figure 4 glute stretch how to')">Figure-4 glute stretch</span> — 30s / side<br>
+      <span class="stxl" onclick="howTo('couch stretch hip flexor how to')">Couch / hip-flexor stretch</span> — 45s / side<br>
+      <span class="stxl" onclick="howTo('standing calf stretch wall how to')">Standing calf stretch</span> — 30s / side<br>
       <b>Arms &amp; upper</b><br>
-      Cross-body shoulder — 30s / arm<br>
-      Overhead triceps — 30s / arm<br>
-      Doorway chest stretch — 45s<br>
-      Wrist-flexor pull-backs — 30s / arm
+      <span class="stxl" onclick="howTo('cross body shoulder stretch how to')">Cross-body shoulder</span> — 30s / arm<br>
+      <span class="stxl" onclick="howTo('overhead triceps stretch how to')">Overhead triceps</span> — 30s / arm<br>
+      <span class="stxl" onclick="howTo('doorway chest stretch how to')">Doorway chest stretch</span> — 45s<br>
+      <span class="stxl" onclick="howTo('wrist flexor stretch how to')">Wrist-flexor pull-backs</span> — 30s / arm
     </div>
-    <div class="note">Use the header timer for holds. Stretch to tension, never pain — exhale into it.</div>
+    <div class="note">Tap any stretch for a video demo. Use the timer for holds. Stretch to tension, never pain — exhale into it.</div>
     <div class="exbtns"><button class="mini ${it.done?'on':''}" onclick="stretchDone(${i},this)">✓ done stretching</button></div>
   </div>`;
 }
 function stretchDone(i, btn){
   const it = draft().items[i];
   it.done = !it.done;
-  btn.classList.toggle('on', it.done);
-  persist();
+  if(it.done) it.collapsed = true;
+  persist(); renderWorkout();
 }
 function warmupCard(it, i){
   const swapSel = swapIdx===i ?
@@ -982,34 +1060,47 @@ function warmupCard(it, i){
     ${itemMenuRow(i)}
     ${swapSel}
     <div class="stx">
-      Cat-cow — × 10<br>
-      Bird dog — × 8 / side<br>
-      Glute bridge (bodyweight) — × 15<br>
-      Leg swings — × 12 / side<br>
-      World's greatest lunge — × 5 / side<br>
-      Arm circles + wall slides — × 15
+      <span class="stxl" onclick="howTo('cat cow exercise how to')">Cat-cow</span> — × 10<br>
+      <span class="stxl" onclick="howTo('bird dog exercise how to')">Bird dog</span> — × 8 / side<br>
+      <span class="stxl" onclick="howTo('bodyweight glute bridge how to')">Glute bridge (bodyweight)</span> — × 15<br>
+      <span class="stxl" onclick="howTo('leg swings dynamic warmup how to')">Leg swings</span> — × 12 / side<br>
+      <span class="stxl" onclick="howTo('worlds greatest stretch lunge how to')">World's greatest lunge</span> — × 5 / side<br>
+      <span class="stxl" onclick="howTo('arm circles wall slides warmup how to')">Arm circles + wall slides</span> — × 15
     </div>
-    <div class="note">Stretching-studio stop between the lifts and the run — the bird dogs and bridges wake the glutes and armor the lower back so the run doesn't hurt. Dynamic only; the long holds stay post-workout.</div>
+    <div class="note">Tap any move for a video demo. Stretching-studio stop between the lifts and the run — the bird dogs and bridges wake the glutes and armor the lower back so the run doesn't hurt. Dynamic only; the long holds stay post-workout.</div>
     <div class="exbtns"><button class="mini ${it.done?'on':''}" onclick="stretchDone(${i},this)">✓ activated</button></div>
   </div>`;
 }
+function collapsedCard(it, i){
+  let name, sets, tag = 'run', chk = '';
+  if(it.k === '__stretch'){ name = 'Stretch routine'; sets = it.done ? 'done' : 'not yet'; chk = it.done ? '✓' : '…'; }
+  else if(it.k === '__warmup'){ name = 'Pre-run activation'; tag = 'core'; sets = it.done ? 'done' : 'not yet'; chk = it.done ? '✓' : '…'; }
+  else if(it.k === '__run'){ name = 'Run'; sets = (it.min||it.sec ? (it.min||0)+':'+String(it.sec||0).padStart(2,'0') : '–') + (it.mi ? ' · '+it.mi+' mi' : ''); }
+  else if(it.k === '__walk'){ name = 'Walk'; sets = (it.min ? it.min+' min' : '–') + (it.mi ? ' · '+it.mi+' mi' : ''); }
+  else if(it.k === '__swim'){ name = 'Swim'; sets = (it.min ? it.min+' min' : '–') + (it.yd ? ' · '+it.yd+' yd' : ''); }
+  else if(it.k === '__bike'){ name = 'Bike'; sets = (it.min ? it.min+' min' : '–') + (it.mi ? ' · '+it.mi+' mi' : ''); }
+  else {
+    const inf2 = exInfo(it.k) || {tag:'push'};
+    tag = inf2.tag;
+    name = exName(it.k);
+    sets = it.sets.filter(s=>s.w||s.r).map(s=>`${s.w||'–'}×${s.r||'?'}`).join(', ') || 'empty';
+    if(it.sets.length && it.sets.every(s=>s.done)) chk = '✓';
+  }
+  return `<div class="card ccard" onclick="expandItem(${i})">
+    <span class="bar ${tag}"></span>
+    <span class="cname">${name}</span>
+    <span class="csets">${sets}</span>
+    ${chk ? `<span class="cchk" ${chk==='…' ? 'style="color:var(--faint)"' : ''}>${chk}</span>` : ''}
+  </div>`;
+}
 function itemCard(it, i){
+  if(it.collapsed) return collapsedCard(it, i);
   if(it.k === '__run')  return runCard(it, i);
   if(it.k === '__walk') return walkCard(it, i);
   if(it.k === '__swim') return swimCard(it, i);
   if(it.k === '__bike') return bikeCard(it, i);
   if(it.k === '__stretch') return stretchCard(it, i);
   if(it.k === '__warmup') return warmupCard(it, i);
-  if(it.collapsed){
-    const summary = it.sets.filter(s=>s.w||s.r).map(s=>`${s.w||'–'}×${s.r||'?'}`).join(', ');
-    const inf2 = exInfo(it.k) || {tag:'push'};
-    return `<div class="card ccard" onclick="expandItem(${i})">
-      <span class="bar ${inf2.tag}"></span>
-      <span class="cname">${exName(it.k)}</span>
-      <span class="csets">${summary}</span>
-      <span class="cchk">✓</span>
-    </div>`;
-  }
   const inf = exInfo(it.k) || {tag:'push', reps:'', repMax:99};
   const last = lastSetsFor(it.k);
   const lastTxt = last ? 'Last: ' + last.filter(s=>s.w||s.r).map(s=>`${s.w||'?'}×${s.r||'?'}`).join(', ') : '';
@@ -1035,6 +1126,7 @@ function itemCard(it, i){
       ${itemCtl(i)}</h3>
     ${itemMenuRow(i)}
     ${it.note ? `<div class="note">${it.note}</div>` : ''}
+    ${state.exNotes[it.k] ? `<div class="note exnote">✎ ${state.exNotes[it.k]}</div>` : ''}
     ${lastTxt ? `<div class="last">${lastTxt}</div>` : ''}
     ${beat}
     ${qhKey===it.k ? qhistHTML(it.k) : ''}
@@ -2308,9 +2400,10 @@ function importData(input){
     try{
       const parsed = JSON.parse(rd.result);
       if(!parsed.sessions) throw new Error('bad file');
-      state = Object.assign({sessions:[],weights:[],drafts:{},customEx:{},restDays:{},lastPreset:0}, parsed);
+      state = Object.assign({sessions:[],weights:[],drafts:{},customEx:{},restDays:{},exNotes:{},lastPreset:0}, parsed);
       if(!state.customEx) state.customEx = {};
       if(!state.restDays) state.restDays = {};
+      if(!state.exNotes) state.exNotes = {};
       delete state.protein;
       migrate();
       persist(); renderBw(); renderHistory(); renderWeek(); renderWorkout();
