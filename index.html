@@ -783,7 +783,10 @@ function tmrReset(){
   document.getElementById('tmrbig').textContent = '0:00';
   tmrColors(); tmrButtons(); tmrUnlock();
 }
-function tmrClose(){ document.getElementById('tmroverlay').classList.remove('on'); }
+function tmrClose(){
+  tmrReset();   // closing the overlay clears the clock entirely
+  document.getElementById('tmroverlay').classList.remove('on');
+}
 function timerTap(){
   document.getElementById('tmroverlay').classList.add('on');
   if(tmrState === 'idle') tmrGo();
@@ -946,7 +949,7 @@ function moveItem(i, dir){
   persist(); renderWorkout();
 }
 function itemCtl(i){
-  return `<button class="ictl" onclick="itemMenu(${i})" title="options">⋯</button>`;
+  return `<button class="ictl" onclick="collapseItem(${i})" title="collapse">▾</button><button class="ictl" onclick="itemMenu(${i})" title="options">⋯</button>`;
 }
 function itemMenuRow(i){
   if(menuIdx !== i) return '';
@@ -954,7 +957,6 @@ function itemMenuRow(i){
   return `<div class="exbtns" style="flex-wrap:wrap">
     <button class="mini" onclick="moveItem(${i},-1)">↑ up</button>
     <button class="mini" onclick="moveItem(${i},1)">↓ down</button>
-    <button class="mini" onclick="collapseItem(${i})">▾ collapse</button>
     <button class="mini" onclick="swapItem(${i})">⇄ swap</button>
     ${isEx ? `<button class="mini" onclick="editExNote(${i})">✎ note</button>` : ''}
     ${isEx ? `<button class="mini" onclick="howToItem(${i})">▶ how-to</button>` : ''}
@@ -977,7 +979,7 @@ function editExNote(i){
   persist(); renderWorkout();
 }
 function howTo(q){
-  window.open('https://www.youtube.com/results?search_query=' + encodeURIComponent(q), '_blank');
+  window.open('https://www.google.com/search?q=' + encodeURIComponent(q), '_blank');
 }
 function howToItem(i){
   howTo('how to ' + exName(draft().items[i].k) + ' exercise proper form');
