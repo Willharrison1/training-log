@@ -106,6 +106,7 @@
   .plate .t{font-size:8px; letter-spacing:.06em; color:var(--mut); text-transform:uppercase}
   .plate.future{opacity:.45}
   .plate.rest{border-style:dashed; border-color:var(--faint)}
+  .plate.golf{border-style:dashed; border-color:var(--run)}
   .plate.logged.push{border-color:var(--push)} .plate.logged.pull{border-color:var(--pull)}
   .plate.logged.walk{border-color:var(--run)} .plate.logged.legs{border-color:var(--legs)}
   .plate.logged.custom{border-color:var(--legs)} .plate.logged.core{border-color:var(--core)}
@@ -317,6 +318,7 @@
   #heatmap .hsq.legs,#heatmap .hsq.custom{background:var(--legs); color:#fff}
   #heatmap .hsq.core{background:var(--core); color:#fff}
   #heatmap .hsq.rest{background:var(--line); color:var(--mut)}
+  #heatmap .hsq.golf{background:rgba(76,184,113,.45); color:#fff}
   #heatmap .hsq.future{opacity:.3; cursor:default}
   #heatmap .hsq.out{opacity:.25}
   #heatmap .hsq.today{box-shadow:inset 0 0 0 1.5px var(--run)}
@@ -353,7 +355,21 @@
   }
   #tmroverlay.on{display:flex}
   .tbig{font-family:var(--mono); font-size:84px; font-weight:700; color:var(--ink); letter-spacing:.02em; line-height:1}
-  #tmroverlay .mini{font-size:15px; padding:12px 26px; border-radius:12px}
+  #tmroverlay .mini{font-size:15px; padding:12px 22px; border-radius:12px}
+
+  /* floating timer widget */
+  #tmrfab{
+    position:fixed; right:14px; bottom:86px; z-index:80;
+    width:50px; height:50px; border-radius:50%;
+    background:var(--grad-card); border:1px solid var(--edge);
+    box-shadow:var(--shadow-card), 0 6px 18px rgba(0,0,0,.45);
+    color:var(--mut); font-size:21px; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    font-family:var(--mono); transition:transform .12s ease;
+  }
+  #tmrfab:active{transform:scale(.92)}
+  #tmrfab.run{color:var(--run); font-size:13px; font-weight:700}
+  #tmrfab.stop{color:var(--legs); font-size:13px; font-weight:700}
 
   /* undo toast */
   #undotoast{
@@ -514,9 +530,11 @@
 <div id="tmroverlay">
   <button class="wclose" onclick="tmrClose()">×</button>
   <div class="tbig" id="tmrbig">0:00</div>
-  <div class="exbtns" id="tmrbtns" style="margin-top:0; justify-content:center"></div>
-  <div class="dsub">screen stays awake while it runs</div>
+  <div class="exbtns" id="tmrbtns" style="margin-top:0; justify-content:center; flex-wrap:wrap"></div>
+  <div class="dsub">screen stays awake while it runs · ✕ clears · minimize keeps it going</div>
 </div>
+
+<button id="tmrfab" onclick="timerTap()">⏱</button>
 
 <nav>
   <button class="on" data-tab="today" onclick="switchTab('today',this)">Today</button>
@@ -572,6 +590,7 @@ const EXLIB = {
   backext:{name:'Back extensions',             tag:'core', sets:3, reps:'12–15', repMax:15},
   abwheel:{name:'Ab wheel rollouts',           tag:'core', sets:3, reps:'8–12',  repMax:12},
   sideplank:{name:'Side plank (sec as reps, per side)', tag:'core', sets:3, reps:'20–40s', repMax:999},
+  abmachine:{name:'Ab crunch machine',           tag:'core', sets:3, reps:'12–20', repMax:20},
 };
 const EXNAMES = {bench:'Bench (free)', smith:'Bench (smith)', ohp:'Shoulder press', fly:'Chest fly', tri:'Triceps',
   dip:'Dips', latr:'Lateral raises', idb:'Incline DB press', cgb:'Close-grip bench', sqpress:'Squeeze press',
@@ -582,7 +601,7 @@ const EXNAMES = {bench:'Bench (free)', smith:'Bench (smith)', ohp:'Shoulder pres
   rdl:'Romanian DL', calf:'Calf raises', legpress:'Leg press', goblet:'Goblet squat',
   stepup:'Step-ups', lunge:'Lunges', kbswing:'KB swings', glutebridge:'Glute bridge', sldl:'1-leg RDL',
   pushup:'Push-ups', floorpress:'Floor press', dbbench:'DB bench', plank:'Plank', legraise:'Leg raises', crunch:'Crunches',
-  twist:'Russian twists', backext:'Back extensions', abwheel:'Ab wheel', sideplank:'Side plank'};
+  twist:'Russian twists', backext:'Back extensions', abwheel:'Ab wheel', sideplank:'Side plank', abmachine:'Ab machine'};
 
 /* ---------- presets (the old Day 1-7 program) ---------- */
 const PRESETS = [
@@ -740,7 +759,7 @@ function draft(){
   return state.drafts[selDate];
 }
 /* ---------- header stopwatch (wake-locked) ---------- */
-let tmrState = 'idle', tmrStart = 0, tmrInt = null, wakeLock = null;
+let tmrState = 'idle', tmrMode = 'up', tmrStart = 0, tmrEnd = 0, tmrLast = 60, tmrInt = null, tmrFrozen = '0:00', wakeLock = null;
 function fmtT(ms){
   const s = Math.floor(ms/1000);
   return Math.floor(s/60) + ':' + String(s%60).padStart(2,'0');
@@ -751,58 +770,80 @@ async function tmrLock(){
 function tmrUnlock(){
   try{ if(wakeLock){ wakeLock.release(); wakeLock = null; } }catch(e){}
 }
-function tmrTick(){
-  const txt = fmtT(Date.now() - tmrStart);
-  document.getElementById('tmrval').textContent = txt;
-  const b = document.getElementById('tmrbig');
-  if(b) b.textContent = txt;
+function tmrText(){
+  if(tmrState === 'idle') return '0:00';
+  if(tmrState === 'stop') return tmrFrozen;
+  return tmrMode === 'up' ? fmtT(Date.now() - tmrStart) : fmtT(Math.max(0, tmrEnd - Date.now()) + 999);
 }
-function tmrColors(){
+function tmrSync(){
+  const txt = tmrText();
+  document.getElementById('tmrval').textContent = txt;
+  document.getElementById('tmrbig').textContent = txt;
   const c = tmrState==='run' ? 'var(--run)' : tmrState==='stop' ? 'var(--legs)' : '';
   document.getElementById('tmrval').style.color = c;
   document.getElementById('tmrbig').style.color = c || 'var(--ink)';
+  const f = document.getElementById('tmrfab');
+  if(tmrState === 'idle'){ f.className = ''; f.textContent = '⏱'; }
+  else { f.className = tmrState; f.textContent = txt; }
+  tmrButtons();
+}
+function tmrTick(){
+  if(tmrMode === 'down' && Date.now() >= tmrEnd){
+    tmrFrozen = '0:00'; tmrState = 'stop';
+    clearInterval(tmrInt); tmrUnlock();
+    try{ if(navigator.vibrate) navigator.vibrate([200,100,200]); }catch(e){}
+    tmrSync();
+    return;
+  }
+  const txt = tmrText();
+  document.getElementById('tmrval').textContent = txt;
+  document.getElementById('tmrbig').textContent = txt;
+  if(tmrState !== 'idle') document.getElementById('tmrfab').textContent = txt;
 }
 function tmrButtons(){
   const el = document.getElementById('tmrbtns');
   if(tmrState === 'run')
     el.innerHTML = `<button class="mini" onclick="tmrStop()">⏹ stop</button>
-      <button class="mini" onclick="tmrGo()">↺ restart</button>`;
+      <button class="mini" onclick="tmrAgain()">↺ restart</button>
+      <button class="mini" onclick="tmrMin()">▾ minimize</button>`;
   else if(tmrState === 'stop')
-    el.innerHTML = `<button class="mini" onclick="tmrGo()">▶ go again</button>
+    el.innerHTML = `<button class="mini" onclick="tmrAgain()">▶ again</button>
       <button class="mini" onclick="tmrReset()">↺ reset</button>`;
   else
-    el.innerHTML = `<button class="mini" onclick="tmrGo()">▶ start</button>`;
+    el.innerHTML = `<button class="mini" onclick="tmrUp()">▶ stopwatch</button>
+      <button class="mini" onclick="tmrDown(30)">30s</button>
+      <button class="mini" onclick="tmrDown(45)">45s</button>
+      <button class="mini" onclick="tmrDown(60)">60s</button>
+      <button class="mini" onclick="tmrDown(90)">90s</button>`;
 }
-function tmrGo(){
-  tmrState = 'run'; tmrStart = Date.now();
+function tmrRun(){
+  tmrState = 'run';
   clearInterval(tmrInt);
   tmrInt = setInterval(tmrTick, 250);
-  tmrTick(); tmrColors(); tmrButtons(); tmrLock();
+  tmrSync(); tmrLock();
 }
+function tmrUp(){ tmrMode = 'up'; tmrStart = Date.now(); tmrRun(); }
+function tmrDown(sec){ tmrMode = 'down'; tmrLast = sec; tmrEnd = Date.now() + sec*1000; tmrRun(); }
+function tmrAgain(){ if(tmrMode === 'up') tmrUp(); else tmrDown(tmrLast); }
 function tmrStop(){
+  tmrFrozen = tmrText();
   tmrState = 'stop';
   clearInterval(tmrInt);
-  tmrTick(); tmrColors(); tmrButtons(); tmrUnlock();
+  tmrUnlock(); tmrSync();
 }
 function tmrReset(){
   tmrState = 'idle';
   clearInterval(tmrInt);
-  document.getElementById('tmrval').textContent = '0:00';
-  document.getElementById('tmrbig').textContent = '0:00';
-  tmrColors(); tmrButtons(); tmrUnlock();
+  tmrUnlock(); tmrSync();
 }
+function tmrMin(){ document.getElementById('tmroverlay').classList.remove('on'); }
 function tmrClose(){
-  tmrReset();   // closing the overlay clears the clock entirely
+  tmrReset();   // the X clears the clock entirely; minimize keeps it running
   document.getElementById('tmroverlay').classList.remove('on');
 }
 function timerTap(){
   document.getElementById('tmroverlay').classList.add('on');
-  if(tmrState === 'idle') tmrGo();
-  else { tmrColors(); tmrButtons(); if(tmrState==='stop') tmrTickFrozen(); }
-}
-function tmrTickFrozen(){
-  // stopped: big display mirrors the frozen chip value
-  document.getElementById('tmrbig').textContent = document.getElementById('tmrval').textContent;
+  tmrSync();
 }
 document.addEventListener('visibilitychange', ()=>{
   if(document.visibilityState === 'visible' && tmrState === 'run') tmrLock();
@@ -863,7 +904,7 @@ function renderWeek(){
     const dot = (dr && dr.items && dr.items.length && !ss.length) ? '<span class="dot"></span>' : '';
     const cls = ['plate',
       t ? 'logged '+t : '',
-      (!ss.length && state.restDays[date]) ? 'rest' : '',
+      (!ss.length && state.restDays[date]) ? (state.restDays[date]==='golf' ? 'golf' : 'rest') : '',
       date===selDate ? 'sel' : '',
       date===today ? 'today' : '',
       date>today ? 'future' : ''].filter(Boolean).join(' ');
@@ -943,8 +984,13 @@ function doSwap(sel, i){
   persist(); renderWorkout();
 }
 function toggleRest(){
-  if(state.restDays[selDate]) delete state.restDays[selDate];
+  if(state.restDays[selDate] && state.restDays[selDate] !== 'golf') delete state.restDays[selDate];
   else state.restDays[selDate] = 1;
+  persist(); renderWorkout(); renderWeek(); renderStats();
+}
+function toggleGolf(){
+  if(state.restDays[selDate] === 'golf') delete state.restDays[selDate];
+  else state.restDays[selDate] = 'golf';
   persist(); renderWorkout(); renderWeek(); renderStats();
 }
 function itemMenu(i){ menuIdx = (menuIdx===i ? null : i); swapIdx = null; renderWorkout(); }
@@ -1333,7 +1379,13 @@ function renderWorkout(){
   ss.forEach(s=>{ if(!d || d.editId !== s.id) html += sessionCard(s); });
 
   if(!items.length && !ss.length){
-    if(state.restDays[selDate]){
+    if(state.restDays[selDate] === 'golf'){
+      html += `<div class="card">
+        <h3><span class="bar run"></span>Golf day<span class="target">⛳</span></h3>
+        <div class="note">Marked as golf — active recovery, not couch time. The body moved, the streak stays safe, the muscles rebuild. Change of plans? Build a workout below and it un-marks itself.</div>
+        <div class="exbtns"><button class="mini" onclick="toggleGolf()">unmark golf</button></div>
+      </div>`;
+    } else if(state.restDays[selDate]){
       html += `<div class="card">
         <h3><span class="bar run"></span>Rest day<span class="target">😴</span></h3>
         <div class="note">Marked as rest — this is where the growing happens. The streak stays safe. Change of plans? Build a workout below and it un-marks itself.</div>
@@ -1347,6 +1399,7 @@ function renderWorkout(){
         <div class="exbtns">
           <button class="mini" onclick="loadPreset(${nx.id})">Load ${nx.label}</button>
           <button class="mini" onclick="toggleRest()">rest day</button>
+          <button class="mini" onclick="toggleGolf()">golf day ⛳</button>
         </div>
       </div>`;
     }
@@ -1884,7 +1937,7 @@ function renderHeatmap(){
       const out = heatMonth && date.slice(0,7) !== heatMonth;
       const cls = ['hsq',
         ss.length ? typeOf(ss[ss.length-1]) : '',
-        (!ss.length && state.restDays[date]) ? 'rest' : '',
+        (!ss.length && state.restDays[date]) ? (state.restDays[date]==='golf' ? 'golf' : 'rest') : '',
         date===today ? 'today' : '',
         out ? 'out' : (date>today ? 'future' : '')].filter(Boolean).join(' ');
       row += `<div class="${cls}" onclick="heatTap('${date}')">${+date.slice(8)}</div>`;
@@ -1905,7 +1958,7 @@ function heatTap(date){
     txt = `<b>${fmtDate(date)} · ${s.label||'Workout'}</b><br>` +
       parts.slice(0,4).join('<br>') + (parts.length > 4 ? '<br>…' : '');
   }
-  else if(state.restDays[date]) txt = `${fmtDate(date)} · rest day 😴`;
+  else if(state.restDays[date]) txt = `${fmtDate(date)} · ${state.restDays[date]==='golf' ? 'golf day ⛳' : 'rest day 😴'}`;
   else txt = `${fmtDate(date)} · nothing logged`;
   el.innerHTML = txt + `<br><button class="mini" style="margin-top:6px" onclick="openDay('${date}')">open day</button>`;
 }
@@ -1913,12 +1966,43 @@ function openDay(d){
   pickDate(d);
   switchTab('today', document.querySelector('nav button[data-tab=today]'));
 }
-function lifetimeTotals(){
-  let tonnage = 0, miles = 0;
+function achStats(){
+  const t = {workouts: state.sessions.length, tonnage:0, miles:0, runs:0, swims:0, bikes:0,
+    bestRun:0, bestPaceSec:0, maxVol:0, cal:0, stretches:0, warmups:0, evening:0, morning:0,
+    benchTop:0, legpressTop:0, rowTop:0, ohpTop:0, coreSets:0, best:0, perfectWeeks:0,
+    rests:0, golfs:0};
+  const weekCount = {};
   state.sessions.forEach(s=>{
-    tonnage += sessionVolume(s);
-    ['run','walk','bike'].forEach(f=>{ if(s[f] && s[f].mi) miles += +s[f].mi; });
+    const vol = sessionVolume(s);
+    t.tonnage += vol;
+    t.maxVol = Math.max(t.maxVol, vol);
+    t.cal += sessionCalories(s)||0;
+    if(s.stretch) t.stretches++;
+    if(s.warmup) t.warmups++;
+    ['run','walk','bike'].forEach(f=>{ if(s[f] && s[f].mi) t.miles += +s[f].mi; });
+    if(s.run && (s.run.mi || s.run.min)){
+      t.runs++;
+      t.bestRun = Math.max(t.bestRun, +s.run.mi||0);
+      const sec = (+s.run.min||0)*60 + (+s.run.sec||0), mi = +s.run.mi||0;
+      if(mi >= 1 && sec){ const p = sec/mi; if(!t.bestPaceSec || p < t.bestPaceSec) t.bestPaceSec = p; }
+    }
+    if(s.swim) t.swims++;
+    if(s.bike) t.bikes++;
+    const h = new Date(s.id).getHours();
+    if(h >= 17) t.evening++;
+    if(h < 9) t.morning++;
+    weekCount[mondayOf(s.date)] = (weekCount[mondayOf(s.date)]||0) + 1;
+    for(const k in s.entries){
+      const maxW = Math.max(...s.entries[k].filter(x=>x.w).map(x=>+x.w), 0);
+      if(k==='bench' || k==='smith') t.benchTop = Math.max(t.benchTop, maxW);
+      if(k==='legpress') t.legpressTop = Math.max(t.legpressTop, maxW);
+      if(k==='row' || k==='csrow') t.rowTop = Math.max(t.rowTop, maxW);
+      if(k==='ohp') t.ohpTop = Math.max(t.ohpTop, maxW);
+      const inf = exInfo(k);
+      if(inf && inf.tag==='core') t.coreSets += s.entries[k].filter(x=>x.w||x.r).length;
+    }
   });
+  Object.values(weekCount).forEach(n=>{ if(n >= 6) t.perfectWeeks++; });
   const dates = [...new Set(state.sessions.map(s=>s.date))].sort();
   let best = 0, cur = 0;
   for(let i=0; i<dates.length; i++){
@@ -1926,21 +2010,87 @@ function lifetimeTotals(){
     else cur = 1;
     best = Math.max(best, cur);
   }
-  return {workouts: state.sessions.length, tonnage, miles, best};
+  t.best = best;
+  Object.values(state.restDays||{}).forEach(v=>{ if(v==='golf') t.golfs++; else t.rests++; });
+  return t;
 }
-const MILEDEFS = [
-  ['workouts', '🎯', [10,25,50,100,250,500], v=>v+' workouts'],
-  ['tonnage',  '🏋️', [50000,100000,250000,500000,1000000], v=>fmtVol(v)+' lb lifted'],
-  ['miles',    '👟', [10,25,50,100,250], v=>v+' miles'],
-  ['best',     '🔥', [7,14,30,60], v=>v+'-day streak'],
+const ACH = [
+  ['🎯','First workout',        t=>t.workouts>=1],
+  ['🎯','10 workouts',          t=>t.workouts>=10],
+  ['🎯','25 workouts',          t=>t.workouts>=25],
+  ['🎯','50 workouts',          t=>t.workouts>=50],
+  ['🎯','100 workouts',         t=>t.workouts>=100],
+  ['🎯','250 workouts',         t=>t.workouts>=250],
+  ['🏋️','25k lb lifted',        t=>t.tonnage>=25000],
+  ['🏋️','50k lb lifted',        t=>t.tonnage>=50000],
+  ['🏋️','100k lb lifted',       t=>t.tonnage>=100000],
+  ['🏋️','250k lb lifted',       t=>t.tonnage>=250000],
+  ['🏋️','500k lb lifted',       t=>t.tonnage>=500000],
+  ['🏋️','1M lb — a literal million', t=>t.tonnage>=1000000],
+  ['💥','10k lb in one session', t=>t.maxVol>=10000],
+  ['💥','15k lb in one session', t=>t.maxVol>=15000],
+  ['💥','20k lb in one session', t=>t.maxVol>=20000],
+  ['🍗','95 lb bench club',     t=>t.benchTop>=95],
+  ['🍗','115 bench club',       t=>t.benchTop>=115],
+  ['🍗','135 — ONE PLATE bench',t=>t.benchTop>=135],
+  ['🍗','155 bench club',       t=>t.benchTop>=155],
+  ['🍗','185 bench club',       t=>t.benchTop>=185],
+  ['🍗','225 — TWO PLATES',     t=>t.benchTop>=225],
+  ['🦵','180 leg press',        t=>t.legpressTop>=180],
+  ['🦵','270 leg press',        t=>t.legpressTop>=270],
+  ['🦵','360 — four plates pressed', t=>t.legpressTop>=360],
+  ['🚣','95 lb row club',       t=>t.rowTop>=95],
+  ['🚣','135 row club',         t=>t.rowTop>=135],
+  ['🚣','185 row club',         t=>t.rowTop>=185],
+  ['🎪','50 lb overhead',       t=>t.ohpTop>=50],
+  ['🎪','75 lb overhead',       t=>t.ohpTop>=75],
+  ['🎪','100 lb overhead',      t=>t.ohpTop>=100],
+  ['👟','10 miles covered',     t=>t.miles>=10],
+  ['👟','25 miles',             t=>t.miles>=25],
+  ['👟','50 miles',             t=>t.miles>=50],
+  ['👟','100 miles',            t=>t.miles>=100],
+  ['👟','250 miles',            t=>t.miles>=250],
+  ['🏃','10 runs logged',       t=>t.runs>=10],
+  ['🏃','25 runs',              t=>t.runs>=25],
+  ['🏃','50 runs',              t=>t.runs>=50],
+  ['🏃','100 runs',             t=>t.runs>=100],
+  ['📏','3-mile run',           t=>t.bestRun>=3],
+  ['📏','5-mile run',           t=>t.bestRun>=5],
+  ['⚡','sub-11:00 pace',       t=>t.bestPaceSec && t.bestPaceSec<660],
+  ['⚡','sub-10:00 pace',       t=>t.bestPaceSec && t.bestPaceSec<600],
+  ['⚡','sub-9:00 pace',        t=>t.bestPaceSec && t.bestPaceSec<540],
+  ['⚡','sub-8:00 pace',        t=>t.bestPaceSec && t.bestPaceSec<480],
+  ['🏊','first swim',           t=>t.swims>=1],
+  ['🏊','10 swims',             t=>t.swims>=10],
+  ['🚴','first ride',           t=>t.bikes>=1],
+  ['🚴','10 rides',             t=>t.bikes>=10],
+  ['🔥','7-day streak',         t=>t.best>=7],
+  ['🔥','14-day streak',        t=>t.best>=14],
+  ['🔥','30-day streak',        t=>t.best>=30],
+  ['🔥','60-day streak',        t=>t.best>=60],
+  ['🗓️','perfect week — 6 sessions', t=>t.perfectWeeks>=1],
+  ['🗓️','5 perfect weeks',      t=>t.perfectWeeks>=5],
+  ['🗓️','10 perfect weeks',     t=>t.perfectWeeks>=10],
+  ['🧘','10 stretch sessions',  t=>t.stretches>=10],
+  ['🧘','50 stretch sessions',  t=>t.stretches>=50],
+  ['🚀','25 warm-ups done',     t=>t.warmups>=25],
+  ['🚀','100 warm-ups done',    t=>t.warmups>=100],
+  ['🌙','25 evening workouts',  t=>t.evening>=25],
+  ['🌙','100 evening workouts', t=>t.evening>=100],
+  ['🌅','5 workouts before 9am',t=>t.morning>=5],
+  ['🍩','10k calories burned',  t=>t.cal>=10000],
+  ['🍩','50k calories burned',  t=>t.cal>=50000],
+  ['🍩','100k calories — furnace', t=>t.cal>=100000],
+  ['💪','100 core sets',        t=>t.coreSets>=100],
+  ['💪','500 core sets',        t=>t.coreSets>=500],
+  ['💪','1,000 core sets',      t=>t.coreSets>=1000],
+  ['😴','10 honest rest days',  t=>t.rests>=10],
+  ['⛳','first golf day',       t=>t.golfs>=1],
+  ['⛳','10 golf days',         t=>t.golfs>=10],
 ];
 function milestonesAchieved(){
-  const t = lifetimeTotals();
-  const out = [];
-  MILEDEFS.forEach(([key, icon, steps, fmt])=>{
-    steps.forEach(v=>{ if(t[key] >= v) out.push(icon+' '+fmt(v)); });
-  });
-  return out;
+  const t = achStats();
+  return ACH.filter(a=>a[2](t)).map(a=>a[0]+' '+a[1]);
 }
 function renderMilestones(){
   const card = document.getElementById('milecard');
@@ -1949,15 +2099,7 @@ function renderMilestones(){
   card.style.display='block';
   document.getElementById('miles').innerHTML =
     done.map(m=>`<span class="mile">${m}</span>`).join('');
-  const t = lifetimeTotals();
-  let next = null;
-  MILEDEFS.forEach(([key, icon, steps, fmt])=>{
-    const n = steps.find(v=>t[key] < v);
-    if(!n) return;
-    const ratio = t[key]/n;
-    if(!next || ratio > next.ratio) next = {ratio, txt: fmt(n)};
-  });
-  document.getElementById('milenext').textContent = next ? 'Next up: ' + next.txt : '';
+  document.getElementById('milenext').textContent = `${done.length} / ${ACH.length} unlocked`;
 }
 /* ---------- wrapped ---------- */
 function periodStats(from, to){
