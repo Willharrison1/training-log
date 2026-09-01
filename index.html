@@ -1300,7 +1300,7 @@ function sessionLines(s, prKeys){
   for(const k in s.entries){
     const sets = s.entries[k].filter(x=>x.w||x.r).map(x=>`${x.w||'–'}×${x.r||'?'}`).join(', ');
     if(sets) parts.push(prKeys && prKeys.has(k)
-      ? `<span class="prline">${exName(k)} ${sets} · PR</span>`
+      ? `<span class="prline">${exName(k)} ${sets}</span>`
       : `${exName(k)} ${sets}`);
   }
   if(s.run && (s.run.min||s.run.mi)) parts.push(`Run ${s.run.min||0}:${String(s.run.sec||0).padStart(2,'0')}${s.run.mi ? ' · '+s.run.mi+' mi' : ''}`);
