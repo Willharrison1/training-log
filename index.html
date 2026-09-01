@@ -258,13 +258,7 @@
   .hline{font-family:var(--mono); font-size:12.5px; color:var(--mut); margin-top:6px; line-height:1.6}
   .del{background:none; border:none; color:var(--faint); font-size:15px; cursor:pointer; padding:2px 6px}
   .del.arm{color:var(--push); font-size:12px; font-weight:600}
-  .hcard.pr{border-color:rgba(229,185,63,.5); box-shadow:var(--shadow-card), 0 0 16px -7px rgba(229,185,63,.4)}
-  .hcard.pr .hdate{color:var(--legs)}
-  .prtag{
-    font-family:var(--mono); font-size:9.5px; font-weight:700; color:var(--legs);
-    border:1px solid rgba(229,185,63,.55); border-radius:10px; padding:1.5px 7px;
-    letter-spacing:.06em; flex:none;
-  }
+  .prline{color:var(--legs); font-weight:600}
 
   /* progress */
   select{
@@ -1301,11 +1295,13 @@ function mphStr(r){
   if(!min || !mi) return '';
   return (mi/(min/60)).toFixed(1) + ' mph';
 }
-function sessionLines(s){
+function sessionLines(s, prKeys){
   const parts = [];
   for(const k in s.entries){
     const sets = s.entries[k].filter(x=>x.w||x.r).map(x=>`${x.w||'–'}×${x.r||'?'}`).join(', ');
-    if(sets) parts.push(`${exName(k)} ${sets}`);
+    if(sets) parts.push(prKeys && prKeys.has(k)
+      ? `<span class="prline">${exName(k)} ${sets} · PR</span>`
+      : `${exName(k)} ${sets}`);
   }
   if(s.run && (s.run.min||s.run.mi)) parts.push(`Run ${s.run.min||0}:${String(s.run.sec||0).padStart(2,'0')}${s.run.mi ? ' · '+s.run.mi+' mi' : ''}`);
   if(s.walk && (s.walk.min||s.walk.mi)) parts.push(`Walk ${s.walk.min||'?'} min${s.walk.mi ? ' · '+s.walk.mi+' mi' : ''}`);
@@ -1316,15 +1312,13 @@ function sessionLines(s){
   return parts;
 }
 function sessionCard(s){
-  const parts = sessionLines(s);
+  const parts = sessionLines(s, prMap().get(s.id));
   const vol = sessionVolume(s);
   const cal = sessionCalories(s);
-  const isPr = prSessions().has(s.id);
   const meta = [vol ? fmtVol(vol)+' lb' : null, cal ? '~'+cal+' cal' : null, s.dur ? s.dur+' min' : null].filter(Boolean).join(' · ');
-  return `<div class="hcard ${isPr ? 'pr' : ''}">
+  return `<div class="hcard">
     <div class="hhead">
       <span class="hdate">${s.label||'Workout'}</span>
-      ${isPr ? '<span class="prtag">PR</span>' : ''}
       <span class="hday">${meta}</span>
       <button class="mini" onclick="editSession(${s.id})">Edit</button>
     </div>
@@ -1617,15 +1611,19 @@ function bestE1rm(sets){
   sets.forEach(s=>{ if(s.w && s.r) best = Math.max(best, e1rm(s.w, s.r)); });
   return best;
 }
-function prSessions(){
-  // sessions that set an e1RM PR at the time they happened, derived from history
+function prMap(){
+  // sessionId -> Set of exercise keys that set an e1RM PR in that session,
+  // derived from history chronologically
   const best = {};
-  const out = new Set();
+  const out = new Map();
   state.sessions.forEach(s=>{
     for(const k in s.entries){
       const e = bestE1rm(s.entries[k]);
       if(!e) continue;
-      if(best[k] && e > best[k]) out.add(s.id);
+      if(best[k] && e > best[k]){
+        if(!out.has(s.id)) out.set(s.id, new Set());
+        out.get(s.id).add(k);
+      }
       if(!best[k] || e > best[k]) best[k] = e;
     }
   });
@@ -1788,16 +1786,15 @@ function renderHistory(){
     el.innerHTML = '<div class="empty">No workouts logged yet.<br>Finish a day and it lands here.</div>';
     return;
   }
-  const prSet = prSessions();
+  const pm = prMap();
   el.innerHTML = [...state.sessions].reverse().map(s=>{
-    const parts = sessionLines(s);
+    const parts = sessionLines(s, pm.get(s.id));
     const vol = sessionVolume(s);
     const cal = sessionCalories(s);
     const meta = [vol ? fmtVol(vol)+' lb' : null, cal ? '~'+cal+' cal' : null, s.dur ? s.dur+' min' : null].filter(Boolean).join(' · ');
-    return `<div class="hcard ${prSet.has(s.id) ? 'pr' : ''}">
+    return `<div class="hcard">
       <div class="hhead">
         <span class="hdate">${fmtDate(s.date)}</span>
-        ${prSet.has(s.id) ? '<span class="prtag">PR</span>' : ''}
         <span class="hday">${s.label||''}${meta ? ' · '+meta : ''}</span>
         <button class="del" data-id="${s.id}" onclick="delSession(this)">×</button>
       </div>
@@ -1979,7 +1976,7 @@ function heatTap(date){
   let txt;
   if(ss.length){
     const s = ss[ss.length-1];
-    const parts = sessionLines(s);
+    const parts = sessionLines(s, prMap().get(s.id));
     txt = `<b>${fmtDate(date)} · ${s.label||'Workout'}</b><br>` +
       parts.slice(0,4).join('<br>') + (parts.length > 4 ? '<br>…' : '');
   }
