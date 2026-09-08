@@ -618,9 +618,9 @@ const PRESETS = [
       pushup:'THE KILLER: push-ups → dead bugs → twists, 3 rounds, short rest, all on the mat. Push day — take these near failure, chest-to-floor.',
       deadbug:'Round 2 — DB held over your chest, opposite arm and leg lower slow. Low back stays glued to the mat.',
       twist:'Round 3 — hold a DB or plate, feet up if you can. On fire is the goal.'}},
-  {id:2, label:'Pull Heavy + Legs', type:'pull', items:['negpull','csrow','lat','curl','__warmup','__run','ham','backext','pushup','deadbug','twist','__stretch'],
+  {id:2, label:'Pull Heavy + Legs', type:'pull', items:['csrow','lat','curl','__warmup','negpull','__run','ham','backext','pushup','deadbug','twist','__stretch'],
     tweaks:{csrow:{reps:'5–8', repMax:8}},
-    notes:{negpull:'Flagship skill, done first while fresh — jump to the top, lower for a slow 3–5 count. This is how pull-ups get built without bands.',
+    notes:{negpull:'Run-room bar, before the treadmill — jump to the top, lower for a slow 3–5 count. Arms arrive pre-worked from the pull block, so quality over count: even 1–2 clean lowers move you forward.',
       csrow:'PR day — 5–8 reps, chest on the pad, pull heavy.',
       ham:'Machine — safe to push to failure after the run.',
       backext:'Bodyweight, smooth — building the lower back up, never testing it.',
@@ -634,8 +634,8 @@ const PRESETS = [
       pushup:'THE KILLER: push-ups → dead bugs → twists, 3 rounds on the mat. Push day — near failure, count honestly.',
       deadbug:'Add DB weight once 12s per side feel controlled.',
       twist:'Weighted, feet up. Burn it down.'}},
-  {id:4, label:'Pull + Glutes', type:'pull', items:['scapull','sarow','lat','bbcurl','rdf','__warmup','__run','glutebridge','pushup','deadbug','twist','__stretch'],
-    notes:{scapull:'Flagship groundwork — hang, then pull the shoulder blades down without bending arms. Small motion, big unlock.',
+  {id:4, label:'Pull + Glutes', type:'pull', items:['sarow','lat','bbcurl','rdf','__warmup','scapull','__run','glutebridge','pushup','deadbug','twist','__stretch'],
+    notes:{scapull:'Run-room bar, before the treadmill — hang, then pull the shoulder blades down without bending arms. Small motion, big unlock.',
       sarow:'Go heavy, brace on the bench, back stays flat.',
       bbcurl:'Strict — elbows pinned to your sides.',
       glutebridge:'Glute project: pause 2s at the top. This is what fixes the run pain.',
@@ -649,11 +649,11 @@ const PRESETS = [
       pushup:'THE KILLER: push-ups → dead bugs → twists, 3 rounds on the mat. Push day — after bench these are humbling; near failure anyway.',
       deadbug:'DB up, low back down, slow reps.',
       twist:'Weighted — abs on fire, then stretch.'}},
-  {id:6, label:'Pull Pump', type:'pull', items:['deadhang','csrow','sapd','hammer','rdf','__warmup','__run','sldl','pushup','deadbug','twist','__stretch'],
-    notes:{deadhang:'Flagship finisher — hang heavy and proud, log seconds as reps. Grip is half of every pull-up.',
+  {id:6, label:'Pull Pump', type:'pull', items:['csrow','hammer','sapd','rdf','__warmup','deadhang','__run','sldl','pushup','deadbug','twist','__stretch'],
+    notes:{deadhang:'Run-room bar, before the treadmill — hang heavy and proud, log seconds as reps. Grip is half of every pull-up.',
       csrow:'Second weekly dose — 6–10 here, lighter than Day 2, perfect reps.',
       sapd:'Lats only, no bicep takeover, feel the stretch.',
-      hammer:'Forearms + arm thickness — slow negatives. Forearms carry pull-ups too.',
+      hammer:'Placed early so your grip recovers before the dead hangs. Slow negatives — forearms carry pull-ups too.',
       sldl:'Glute + stabilizer project: light DB, slow — wobbling is the exercise working.',
       pushup:'THE KILLER: push-ups → dead bugs → twists, 3 rounds on the mat. Pull day — push-ups submax, save the chest for tomorrow.',
       deadbug:'Slow opposite arm-and-leg, DB over the chest.',
@@ -1487,7 +1487,7 @@ function renderWorkout(){
       <b>PR days:</b> Days 1–2 lead lifts run 5–8 — set 1 is the attempt, fresh and intended. Day 5 bench chases rep-PRs at 6–10.<br>
       <b>The Killer:</b> every training day closes on the mat — push-ups → weighted dead bugs → weighted twists, 3 rounds, short rest. Near failure on push days, submax on pull days. Add DB weight to the ab moves as they get easy.<br>
       <b>Pull-up work</b> ×3/wk: negatives · scap pulls · dead hangs. Every pound the cut drops makes push-ups and pull-ups easier.<br>
-      <b>Order:</b> ramp into the first lift (2 light sets) · main lifts · pre-run activation · run · leg + finishers · core · stretch.<br>
+      <b>Order = the building:</b> weight room (ramp 2 light sets, then mains) · studio (activation) · run room (bar work → run → legs/glutes/back ext) · studio (the Killer → stretch).<br>
       <b>Lower back:</b> rows stay chest-supported, hinges stay light and smooth, core stays anti-extension. Build it, don't test it.<br>
       <b>Finishers</b> are pump work — light, 15–20 reps, chase blood not PRs.<br>
       <b>Machines</b> can go to failure; split squats stay 1–2 reps short.<br>
