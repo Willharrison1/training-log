@@ -1004,6 +1004,32 @@ function doSwap(sel, i){
   swapIdx = null; menuIdx = null;
   persist(); renderWorkout();
 }
+function nextPresetSmart(){
+  const t = todayISO();
+  const past = state.sessions.filter(s=>s.date <= t);
+  if(!past.length) return {p: PRESETS[0], why: 'Day 1 — the journey starts heavy.'};
+  const last = past[past.length-1];
+  // alternation anchor: the most recent real push or pull session
+  let lastPP = null;
+  for(let i=past.length-1; i>=0; i--){
+    const ty = typeOf(past[i]);
+    if(ty==='push' || ty==='pull'){ lastPP = ty; break; }
+  }
+  const need = lastPP==='push' ? 'pull' : lastPP==='pull' ? 'push' : null;
+  const gapDays = Math.round((new Date(t+'T12:00:00') - new Date(last.date+'T12:00:00'))/86400000);
+  const fresh = gapDays >= 2 || !!state.restDays[addDays(t,-1)];
+  const seq = PRESETS[(state.lastPreset||0) % 7];
+  if(fresh && need){
+    const heavy = need==='push' ? PRESETS[0] : PRESETS[1];
+    return {p: heavy, why: `You're rested — spend it on the heavy ${need} day. PR weather. ⚡`};
+  }
+  if(need && seq.type !== need && seq.type !== 'walk'){
+    const candidates = PRESETS.slice(0,6).filter(p=>p.type===need);
+    const after = candidates.find(p=>p.id > (state.lastPreset||0)) || candidates[0];
+    return {p: after, why: `Alternation first — last real day was ${lastPP}, so today pulls the other way.`};
+  }
+  return {p: seq, why: null};
+}
 function toggleRest(){
   if(state.restDays[selDate] && state.restDays[selDate] !== 'golf') delete state.restDays[selDate];
   else state.restDays[selDate] = 1;
@@ -1415,10 +1441,11 @@ function renderWorkout(){
         <div class="exbtns"><button class="mini" onclick="toggleRest()">unmark rest</button></div>
       </div>`;
     } else {
-      const nx = PRESETS[(state.lastPreset||0) % 7];
+      const sm = nextPresetSmart();
+      const nx = sm.p;
       html += `<div class="card">
-        <h3><span class="bar ${nx.type==='walk'?'run':nx.type}"></span>Next up: ${nx.label}<span class="target">day ${nx.id}</span></h3>
-        <div class="note">Load it and swap or drop anything — or build the day from scratch below.</div>
+        <h3><span class="bar ${nx.type==='walk'?'run':nx.type==='custom'?'legs':nx.type}"></span>Next up: ${nx.label}<span class="target">day ${nx.id}</span></h3>
+        <div class="note">${sm.why ? sm.why + '<br>' : ''}Load it and swap or drop anything — or build the day from scratch below.</div>
         <div class="exbtns">
           <button class="mini" onclick="loadPreset(${nx.id})">Load ${nx.label}</button>
           <button class="mini" onclick="toggleRest()">rest day</button>
