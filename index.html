@@ -620,12 +620,12 @@ const PRESETS = [
       split:'After the leg press and abs — lighter DBs, 1–2 in reserve, hold a rail if shaky.',
       abmachine:'Heavy abs — stack the machine and push to failure. Abs PR like any lift.',
       pushup:'Day opener, fresh — a primer, not a burner: 3–4 left in the tank. The bench PR gets first claim on your chest.'}},
-  {id:2, label:'Pull Heavy + Legs', type:'pull', items:['pushup','csrow','lat','hammer','__warmup','negpull','srow','bbcurl','ham','backext','abmachine','__run','__stretch'],
+  {id:2, label:'Pull Heavy + Legs', type:'pull', items:['pushup','csrow','lat','srow','hammer','__warmup','negpull','bbcurl','ham','backext','abmachine','__run','__stretch'],
     tweaks:{csrow:{reps:'5–8', repMax:8}},
     notes:{csrow:'PR day — 5–8 reps, chest on the pad, pull heavy.',
       hammer:'Weight-room curl — neutral grip, easy on that outer forearm. Slow negatives.',
       negpull:'Run-room bar, before the treadmill — jump to the top, lower for a slow 3–5 count. Quality over count: even 1–2 clean lowers move you forward.',
-      srow:'Your addition — pre-run seated rows, squeeze the blades together, 8–12.',
+      srow:'Weight-room addition — squeeze the blades together, 8–12.',
       bbcurl:'Pre-run barbell curls — the run-room bar, strict, elbows pinned.',
       ham:'Machine — safe to push to failure.',
       backext:'Bodyweight, smooth — building the lower back up, never testing it.',
@@ -638,11 +638,11 @@ const PRESETS = [
       calf:'Only leg work today — slow negatives, full stretch at the bottom.',
       abmachine:'Heavy abs — add a plate when the top of the range feels smooth.',
       pushup:'Opener primer — quality reps, 3–4 in the tank before the pressing starts.'}},
-  {id:4, label:'Pull + Glutes', type:'pull', items:['pushup','sarow','lat','hammer','rdf','__warmup','scapull','srow','bbcurl','glutebridge','ext','abmachine','__run','__stretch'],
+  {id:4, label:'Pull + Glutes', type:'pull', items:['pushup','sarow','lat','srow','hammer','rdf','__warmup','scapull','bbcurl','glutebridge','ext','abmachine','__run','__stretch'],
     notes:{sarow:'Go heavy, brace on the bench, back stays flat.',
       hammer:'Weight-room curl — neutral grip protects the forearm.',
       scapull:'Run-room bar, before the treadmill — hang, then pull the shoulder blades down without bending arms. Small motion, big unlock.',
-      srow:'Pre-run seated rows — squeeze, 8–12.',
+      srow:'Weight-room dose — squeeze the blades, 8–12.',
       bbcurl:'Pre-run barbell curls — strict, no swinging.',
       glutebridge:'Glute project: pause 2s at the top. This is what fixes the run pain.',
       ext:'NEW quad work — machine, safe to chase the burn. Legs grow now.',
@@ -655,12 +655,12 @@ const PRESETS = [
       goblet:'Alternate weeks with split squats. Upright torso — easy on the lower back.',
       abmachine:'Heavy abs — chase the stack.',
       pushup:'Opener primer — 3–4 in reserve; the bench rep-PRs come next.'}},
-  {id:6, label:'Pull Pump', type:'pull', items:['pushup','csrow','hammer','sapd','rdf','__warmup','deadhang','srow','bbcurl','sldl','abmachine','__run','__stretch'],
+  {id:6, label:'Pull Pump', type:'pull', items:['pushup','csrow','hammer','srow','sapd','rdf','__warmup','deadhang','bbcurl','sldl','abmachine','__run','__stretch'],
     notes:{csrow:'Second weekly dose — 6–10 here, lighter than Day 2, perfect reps.',
       hammer:'Early so your grip recovers before the dead hangs. Neutral grip, slow negatives.',
       sapd:'Lats only, no bicep takeover, feel the stretch.',
       deadhang:'Run-room bar, before the treadmill — hang heavy and proud, log seconds as reps. Grip is half of every pull-up.',
-      srow:'Pre-run seated rows — third dose of the week, perfect reps.',
+      srow:'Third dose of the week — perfect reps.',
       bbcurl:'Pre-run barbell curls to close the arm week — strict.',
       sldl:'Glute + stabilizer project: light DB, slow — wobbling is the exercise working.',
       abmachine:'Heavy abs — last stack of the week.',
@@ -1495,7 +1495,7 @@ function renderWorkout(){
       <b>Push-ups open the day</b> while you're fresh — skill grows on quality reps: near failure on pull days (nothing presses after), primer with 3–4 in reserve on push days. <b>The closer:</b> heavy ab machine caps the run room (stack it — abs PR too), stretch ends the day.<br>
       <b>Arms:</b> hammers in the weight room, barbell curls pre-run. No DB curls — the forearm has spoken.<br>
       <b>Pull-up work</b> ×3/wk: negatives · scap pulls · dead hangs. Every pound the cut drops makes push-ups and pull-ups easier.<br>
-      <b>Order = the building:</b> weight room (push-ups fresh, ramp 2 light sets, then mains) · studio (activation) · run room (bar work → rows/curls on pull days → legs/glutes/back ext → heavy abs → THE RUN LAST) · studio (stretch).<br>
+      <b>Order = the building:</b> weight room (push-ups fresh, ramp 2 light sets, then mains) · studio (activation) · run room (bar work → BB curls on pull days → legs/glutes/back ext → heavy abs → THE RUN LAST) · studio (stretch).<br>
       <b>Lower back:</b> rows stay chest-supported or seated, hinges stay light and smooth. Build it, don't test it.<br>
       <b>Legs grew up:</b> leg press heavy on Day 1, extensions on Day 4 — the one-leg-a-day era is over. If two lifts flag flat or the trend line stalls upward, the newest additions are the first to go.<br>
       <b>Finishers</b> are pump work — light, 15–20 reps, chase blood not PRs.<br>
