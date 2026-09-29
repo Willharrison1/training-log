@@ -612,7 +612,7 @@ const EXNAMES = {bench:'Bench (free)', smith:'Bench (smith)', ohp:'Shoulder pres
 
 /* ---------- presets (the old Day 1-7 program) ---------- */
 const PRESETS = [
-  {id:1, label:'Push Heavy + Legs', type:'push', items:['pushup','bench','ohp','fly','latr','tri','__warmup','abmachine','__run','legpress','glutebridge','__stretch'],
+  {id:1, label:'Push Heavy', type:'push', items:['pushup','bench','ohp','fly','latr','tri','__warmup','abmachine','__run','legpress','glutebridge','__stretch'],
     tweaks:{bench:{reps:'5–8', repMax:8}},
     notes:{bench:'PR day — 5–8 reps, heavier bar. Set 1 is the attempt: walk in intending to beat the log. Then strip ~15% for one back-off set of 8–12 — the growth set.',
       legpress:'Your leg PR lift, first after the run — un-skippable. Heavy, 8–12, full depth.',
@@ -620,7 +620,7 @@ const PRESETS = [
       latr:'One more for the delts — light, 12–15.',
       abmachine:'Heavy abs — stack the machine and push to failure. Abs PR like any lift.',
       pushup:'Day opener, fresh — a primer, not a burner: 3–4 left in the tank. The bench PR gets first claim on your chest.'}},
-  {id:2, label:'Pull Heavy + Legs', type:'pull', items:['pushup','csrow','hammer','lat','rdf','srow','__warmup','bbcurl','abmachine','__run','ext','calf','__stretch'],
+  {id:2, label:'Pull Heavy', type:'pull', items:['pushup','csrow','hammer','lat','rdf','srow','__warmup','bbcurl','abmachine','__run','ext','calf','__stretch'],
     tweaks:{csrow:{reps:'5–8', repMax:8}},
     notes:{csrow:'PR day — 5–8 reps, chest on the pad, pull heavy. Then strip ~15% for one back-off set of 8–12 — the growth set.',
       srow:'Your pick, back by demand — squeeze the blades together, 8–12.',
@@ -640,7 +640,7 @@ const PRESETS = [
       backext:'Session closer — bodyweight, smooth. Build the lower back, never test it.',
       abmachine:'Heavy abs — add a plate when the top of the range feels smooth.',
       pushup:'Opener primer — quality reps, 3–4 in the tank before the pressing starts.'}},
-  {id:4, label:'Pull + Legs', type:'pull', items:['pushup','sarow','hammer','lat','rdf','srow','__warmup','bbcurl','abmachine','__run','ext','calf','__stretch'],
+  {id:4, label:'Pull Volume', type:'pull', items:['pushup','sarow','hammer','lat','rdf','srow','__warmup','bbcurl','abmachine','__run','ext','calf','__stretch'],
     notes:{sarow:'Go heavy, brace on the bench, back stays flat.',
       hammer:'Weight-room curl — neutral grip protects the forearm.',
       srow:'Second weekly dose — squeeze, 8–12.',
@@ -649,7 +649,7 @@ const PRESETS = [
       calf:'Tag-along calves — 12–15, full stretch at the bottom.',
       abmachine:'Heavy abs — easy stimulus, big payoff.',
       pushup:'Opener at full send — fresh chest, no pressing today. Beat Day 2’s number.'}},
-  {id:5, label:'Push Pump + Legs', type:'push', items:['pushup','bench','latr','sqpress','tri','__warmup','abmachine','__run','legpress','glutebridge','backext','__stretch'],
+  {id:5, label:'Push Pump', type:'push', items:['pushup','bench','latr','sqpress','tri','__warmup','abmachine','__run','legpress','glutebridge','backext','__stretch'],
     notes:{bench:'Rep-PR day — 6–10. Same bar as Day 1, more reps: two ways to set PRs each week.',
       latr:'Buffer after the bench — shoulders burn while the chest recharges.',
       sqpress:'Press the DBs into each other the whole rep, safe to fail — chest and triceps together.',
@@ -671,14 +671,14 @@ const PRESETS = [
   {id:7, label:'Walk day', type:'walk', items:['__walk','plank','__stretch'],
     notes:{plank:'Rest-day core — easy effort, keep the habit alive.'}},
   {id:8, label:'Apartment Push', type:'push',
-    items:['dbbench','ohp','pushup','latr','tri','__warmup','__run','goblet','plank','__stretch'],
+    items:['dbbench','ohp','pushup','tri','latr','__warmup','__run','goblet','plank','__stretch'],
     notes:{dbbench:'On the bench, heaviest DBs available — alternate flat and incline week to week.',
       ohp:'Standing, DBs or kettlebells overhead.',
       pushup:'After the presses — to near failure. Elevate feet once 20 gets easy.',
       tri:'The tricep-pull station.',
       goblet:'Or split squats or step-ups — any DB leg move, but only one.'}},
   {id:9, label:'Apartment Pull', type:'pull',
-    items:['sarow','curl','sapd','shrug','rdf','__warmup','__run','kbswing','sideplank','__stretch'],
+    items:['sarow','curl','shrug','sapd','rdf','__warmup','__run','kbswing','sideplank','__stretch'],
     notes:{sarow:'Your heavy pull here — brace on a chair or couch arm, back flat.',
       sapd:'On the tricep-pull station — arms straight, lats only.',
       shrug:'DBs or kettlebells — squeeze at the top.',
@@ -1502,7 +1502,6 @@ function renderWorkout(){
       <b>Lower back:</b> rows stay chest-supported or seated, hinges stay light and smooth, back extensions close Days 3 &amp; 5. Build it, don't test it.<br>
       <b>Legs, every day, dead simple:</b> push days = leg press + glute bridge, pull days = extensions + calves. Two after the run (Days 3 &amp; 5 add back extensions at the end), un-skippable — the audit's 3-set leg weeks stay buried.<br>
       <b>Micro-progression:</b> when the yellow line says go up but the next DB is too big a jump, add a set this week and make the jump next week. 67/67/67 three sessions running is a stall, not a groove.<br>
-      <b>Finishers</b> are pump work — light, 15–20 reps, chase blood not PRs.<br>
       <b>Machines</b> can go to failure — that's the whole leg block and the abs.<br>
       <b>Free bar:</b> never to absolute failure without a spotter — 1–2 in reserve, and set the rack safeties when in doubt.<br>
       <b>Cardio:</b> 30 minutes every session — ~1.5 mi of running, walk the rest. The cut engine and the health floor: don't skip it, don't stretch it.<br>
