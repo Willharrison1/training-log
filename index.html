@@ -622,7 +622,7 @@ const PRESETS = [
       latr:'One more for the delts — light, 12–15.',
       abmachine:'Heavy abs — stack the machine and push to failure. Abs PR like any lift.',
       pushup:'Day opener, fresh — a primer, not a burner: 3–4 left in the tank. The bench PR gets first claim on your chest.'}},
-  {id:2, label:'Pull Heavy', type:'pull', items:['pushup','csrow','hammer','lat','rdf','srow','__warmup','bbcurl','abmachine','__run','ext','calf','__stretch'],
+  {id:2, label:'Pull Heavy', type:'pull', items:['pushup','csrow','hammer','lat','rdf','srow','__warmup','bbcurl','abmachine','__run','ext','adduction','calf','__stretch'],
     tweaks:{csrow:{reps:'5–8', repMax:8}},
     notes:{csrow:'PR day — 5–8 reps, chest on the pad, pull heavy. Then strip ~15% for one back-off set of 8–12 — the growth set.',
       srow:'Your pick, back by demand — squeeze the blades together, 8–12.',
@@ -630,6 +630,7 @@ const PRESETS = [
       rdf:'Rear delts join the heavy day — 12–15, strict, another buffer in the cycle.',
       bbcurl:'Pre-run barbell curls — the run-room bar, strict, elbows pinned.',
       ext:'Quad slot, first after the run — 10–15, squeeze hard at the top.',
+      adduction:'New ground — go LIGHT week one, 2 easy sets only: first-time adductor soreness is legendary. Build from week two.',
       calf:'Low-fatigue tag-along — your +79% club. Slow negatives, 12–15.',
       abmachine:'Heavy abs — stack it, push to failure.',
       pushup:'Day opener, fresh chest and nothing pressing after — THIS is the near-failure push-up day. Chase the rep PR.'}},
@@ -642,12 +643,13 @@ const PRESETS = [
       backext:'Session closer — bodyweight, smooth. Build the lower back, never test it.',
       abmachine:'Heavy abs — add a plate when the top of the range feels smooth.',
       pushup:'Opener primer — quality reps, 3–4 in the tank before the pressing starts.'}},
-  {id:4, label:'Pull Volume', type:'pull', items:['pushup','sarow','hammer','lat','rdf','srow','__warmup','bbcurl','abmachine','__run','ext','calf','__stretch'],
+  {id:4, label:'Pull Volume', type:'pull', items:['pushup','sarow','hammer','lat','rdf','srow','__warmup','bbcurl','abmachine','__run','ext','adduction','calf','__stretch'],
     notes:{sarow:'Go heavy, brace on the bench, back stays flat.',
       hammer:'Weight-room curl — neutral grip protects the forearm.',
       srow:'Second weekly dose — squeeze, 8–12.',
       bbcurl:'Pre-run barbell curls — strict, no swinging.',
       ext:'Quad slot — 10–15, chase the burn, the machine has your back.',
+      adduction:'Second dose — full stretch at the start of each rep, no bouncing.',
       calf:'Tag-along calves — 12–15, full stretch at the bottom.',
       abmachine:'Heavy abs — easy stimulus, big payoff.',
       pushup:'Opener at full send — fresh chest, no pressing today. Beat Day 2’s number.'}},
@@ -660,13 +662,14 @@ const PRESETS = [
       backext:'Second dose closes the day — smooth reps, build it, never test it.',
       abmachine:'Heavy abs — chase the stack.',
       pushup:'Opener primer — 3–4 in reserve; the bench rep-PRs come next.'}},
-  {id:6, label:'Pull Pump', type:'pull', items:['pushup','csrow','hammer','sapd','rdf','srow','__warmup','bbcurl','abmachine','__run','ext','calf','__stretch'],
+  {id:6, label:'Pull Pump', type:'pull', items:['pushup','csrow','hammer','sapd','rdf','srow','__warmup','bbcurl','abmachine','__run','ext','adduction','calf','__stretch'],
     notes:{csrow:'Second weekly dose — 6–10 here, lighter than Day 2, perfect reps.',
       srow:'Third dose of the week — perfect reps.',
       hammer:'Neutral grip, slow negatives — easy on the forearm.',
       sapd:'Lats only, no bicep takeover, feel the stretch.',
       bbcurl:'Pre-run barbell curls to close the arm week — strict.',
       ext:'Last quad slot of the week — 10–15, empty it.',
+      adduction:'Third dose — spine-safe machine, last set near failure once the DOMS phase is over.',
       calf:'Closing calves — pause at the top, 12–15.',
       abmachine:'Heavy abs — last stack of the week.',
       pushup:'Opener at full send — last push-up test of the week, empty the tank.'}},
@@ -1500,9 +1503,9 @@ function renderWorkout(){
       <b>Push-ups open the day</b> while you're fresh — skill grows on quality reps: near failure on pull days (nothing presses after), primer with 3–4 in reserve on push days. <b>Abs go before the run</b> — heavy ab machine, stacked, an abs PR is still a PR. <b>The closer:</b> the leg pair caps the day, stretch ends it.<br>
       <b>Arms:</b> hammers in the weight room, barbell curls pre-run. No DB curls — the forearm has spoken.<br>
       <b>Pull-ups:</b> progression work shelved by choice — the cut does that lifting now (every pound off brings the first rep closer). Test one whenever you feel like it; the day it goes up, pull-ups enter the program for real.<br>
-      <b>Order = the building:</b> weight room (push-ups fresh, ramp 2 light sets, then mains cycling chest→shoulders→back→arms, never the same region twice) · studio (activation) · run room (BB curls on pull days → heavy abs → the run → the leg pair; back extensions close Days 3 &amp; 5) · studio (stretch).<br>
+      <b>Order = the building:</b> weight room (push-ups fresh, ramp 2 light sets, then mains cycling chest→shoulders→back→arms, never the same region twice) · studio (activation) · run room (BB curls on pull days → heavy abs → the run → the leg block; back extensions close Days 3 &amp; 5) · studio (stretch).<br>
       <b>Lower back:</b> rows stay chest-supported or seated, hinges stay light and smooth, back extensions close Days 3 &amp; 5. Build it, don't test it.<br>
-      <b>Legs, every day, dead simple:</b> push days = leg press + glute bridge, pull days = extensions + calves. Two after the run (Days 3 &amp; 5 add back extensions at the end), un-skippable — the audit's 3-set leg weeks stay buried.<br>
+      <b>Legs, every day, dead simple:</b> push days = leg press + glute bridge (back extensions close Days 3 &amp; 5), pull days = extensions + hip adduction + calves. Right after the run, un-skippable — the audit's 3-set leg weeks stay buried.<br>
       <b>Micro-progression:</b> when the yellow line says go up but the next DB is too big a jump, add a set this week and make the jump next week. 67/67/67 three sessions running is a stall, not a groove.<br>
       <b>Machines</b> can go to failure — that's the whole leg block and the abs.<br>
       <b>Free bar:</b> never to absolute failure without a spotter — 1–2 in reserve, and set the rack safeties when in doubt.<br>
