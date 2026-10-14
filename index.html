@@ -628,7 +628,7 @@ const PRESETS = [
       srow:'Your pick, back by demand — squeeze the blades together, 8–12.',
       hammer:'Weight-room curl — neutral grip, easy on that outer forearm. Buffers the rows.',
       rdf:'Rear delts join the heavy day — 12–15, strict, another buffer in the cycle.',
-      bbcurl:'Pre-run barbell curls — the run-room bar, strict, elbows pinned.',
+      bbcurl:'Pre-run curls — use the EZ bar if the run room has one: angled grips spare the wrists. Strict, elbows pinned, wrists straight.',
       ext:'Quad slot, first after the run — 10–15, squeeze hard at the top.',
       adduction:'New ground — go LIGHT week one, 2 easy sets only: first-time adductor soreness is legendary. Build from week two.',
       calf:'Low-fatigue tag-along — your +79% club. Slow negatives, 12–15.',
@@ -647,7 +647,7 @@ const PRESETS = [
     notes:{sarow:'Go heavy, brace on the bench, back stays flat.',
       hammer:'Weight-room curl — neutral grip protects the forearm.',
       srow:'Second weekly dose — squeeze, 8–12.',
-      bbcurl:'Pre-run barbell curls — strict, no swinging.',
+      bbcurl:'Pre-run curls — EZ bar over straight bar while the wrists complain. No swinging.',
       ext:'Quad slot — 10–15, chase the burn, the machine has your back.',
       adduction:'Second dose — full stretch at the start of each rep, no bouncing.',
       calf:'Tag-along calves — 12–15, full stretch at the bottom.',
@@ -667,7 +667,7 @@ const PRESETS = [
       srow:'Third dose of the week — perfect reps.',
       hammer:'Neutral grip, slow negatives — easy on the forearm.',
       sapd:'Lats only, no bicep takeover, feel the stretch.',
-      bbcurl:'Pre-run barbell curls to close the arm week — strict.',
+      bbcurl:'Pre-run curls to close the arm week — EZ grip, wrists in line with the forearms.',
       ext:'Last quad slot of the week — 10–15, empty it.',
       adduction:'Third dose — spine-safe machine, last set near failure once the DOMS phase is over.',
       calf:'Closing calves — pause at the top, 12–15.',
@@ -1174,7 +1174,8 @@ function stretchCard(it, i){
       <span class="stxl" onclick="howToImg('cross body shoulder stretch how to')">Cross-body shoulder</span> — 30s / arm<br>
       <span class="stxl" onclick="howToImg('overhead triceps stretch how to')">Overhead triceps</span> — 30s / arm<br>
       <span class="stxl" onclick="howToImg('doorway chest stretch how to')">Doorway chest stretch</span> — 45s<br>
-      <span class="stxl" onclick="howToImg('wrist flexor stretch how to')">Wrist-flexor pull-backs</span> — 30s / arm
+      <span class="stxl" onclick="howToImg('wrist flexor stretch how to')">Wrist-flexor pull-backs</span> — 30s / arm<br>
+      <span class="stxl" onclick="howToImg('wrist extensor stretch forearm how to')">Wrist-extensor stretch</span> — 30s / arm
     </div>
     <div class="note">Tap any stretch for a video demo. Use the timer for holds. Stretch to tension, never pain — exhale into it.</div>
     <div class="exbtns"><button class="mini ${it.done?'on':''}" onclick="stretchDone(${i},this)">✓ done stretching</button></div>
@@ -1505,6 +1506,7 @@ function renderWorkout(){
       <b>Pull-ups:</b> progression work shelved by choice — the cut does that lifting now (every pound off brings the first rep closer). Test one whenever you feel like it; the day it goes up, pull-ups enter the program for real.<br>
       <b>Order = the building:</b> weight room (push-ups fresh, ramp 2 light sets, then mains cycling chest→shoulders→back→arms, never the same region twice) · studio (activation) · run room (BB curls on pull days → heavy abs → the run → the leg block; back extensions close Days 3 &amp; 5) · studio (stretch).<br>
       <b>Lower back:</b> rows stay chest-supported or seated, hinges stay light and smooth, back extensions close Days 3 &amp; 5. Build it, don't test it.<br>
+      <b>Wrists:</b> bench bar sits LOW in the palm, stacked over the forearm bones, knuckles to the ceiling — never bent back under load. Curls on the EZ bar while wrists complain; push-ups move to fists or DB handles if they bark. Sharp pain or 2 weeks with no progress → back off the aggravator, not the week.<br>
       <b>Legs, every day, dead simple:</b> push days = leg press + glute bridge (back extensions close Days 3 &amp; 5), pull days = extensions + hip adduction + calves. Right after the run, un-skippable — the audit's 3-set leg weeks stay buried.<br>
       <b>Micro-progression:</b> when the yellow line says go up but the next DB is too big a jump, add a set this week and make the jump next week. 67/67/67 three sessions running is a stall, not a groove.<br>
       <b>Machines</b> can go to failure — that's the whole leg block and the abs.<br>
